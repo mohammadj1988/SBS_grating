@@ -1,0 +1,251 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>SBS imaging-plane simulator — axicon ring + probe</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --line:#222b36; --txt:#d6deea;
+    --muted:#8a97a8; --accent:#5ad1ff; --warn:#ffcf6b;
+    --mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--sans);
+       padding:18px;line-height:1.45}
+  h1{font-size:16px;margin:0 0 2px;letter-spacing:.2px}
+  .sub{color:var(--muted);font-size:12.5px;margin:0 0 16px}
+  .wrap{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start}
+  .views{display:flex;gap:16px;flex-wrap:wrap}
+  .view{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+        padding:12px;width:300px}
+  .view h2{font-size:12.5px;margin:0 0 8px;color:var(--accent);font-weight:600;
+           letter-spacing:.3px;text-transform:uppercase}
+  canvas{width:276px;height:276px;border-radius:8px;display:block;background:#000;
+         image-rendering:auto}
+  .cap{color:var(--muted);font-size:11.5px;margin-top:8px;min-height:30px}
+  .controls{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+            padding:16px;width:330px}
+  .ctl{margin-bottom:14px}
+  .ctl label{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px}
+  .ctl .val{font-family:var(--mono);color:var(--accent)}
+  input[type=range]{width:100%;accent-color:var(--accent)}
+  .toggle{display:flex;align-items:center;gap:8px;font-size:12.5px;margin-bottom:14px}
+  .read{background:#0a0e14;border:1px solid var(--line);border-radius:10px;padding:12px;
+        font-family:var(--mono);font-size:12.5px}
+  .read .row{display:flex;justify-content:space-between;padding:2px 0}
+  .read .k{color:var(--muted)} .read .v{color:var(--txt)}
+  .read .hi{color:var(--accent)}
+  .note{color:var(--warn);font-size:11.5px;margin-top:10px;line-height:1.4}
+  .legend{font-size:11px;color:var(--muted);margin-top:6px}
+</style>
+
+<h1>Single-objective SBS — imaging-plane simulator</h1>
+<p class="sub">Annular (axicon) pump + on-axis probe. Left = objective back aperture (pupil). Right = what a CCD sees. Fourier-propagation model (128² angular-spectrum FFT).</p>
+
+<div class="wrap">
+  <div class="views">
+    <div class="view">
+      <h2>Pupil / back aperture</h2>
+      <canvas id="pupil" width="128" height="128"></canvas>
+      <div class="cap">Pump = ring (axicon). Probe = central disk through the OAP hole. Ring radius sets the cone half-angle.</div>
+    </div>
+    <div class="view">
+      <h2>CCD / image plane</h2>
+      <canvas id="ccd" width="128" height="128"></canvas>
+      <div class="cap" id="ccdcap">At focus the ring collapses to a Bessel core overlapping the probe spot. Defocus it and the pump reappears as a ring around the probe.</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="ctl">
+      <label>Axicon ring radius <span class="val" id="vRing">0.55</span></label>
+      <input id="ring" type="range" min="0.02" max="1" step="0.01" value="0.55">
+    </div>
+    <div class="ctl">
+      <label>Objective NA <span class="val" id="vNA">0.70</span></label>
+      <input id="na" type="range" min="0.2" max="1.2" step="0.01" value="0.70">
+    </div>
+    <div class="ctl">
+      <label>Probe offset (alignment) <span class="val" id="vOff">0 px</span></label>
+      <input id="off" type="range" min="-40" max="40" step="1" value="0">
+    </div>
+    <div class="ctl">
+      <label>CCD / relay defocus <span class="val" id="vDef">0</span></label>
+      <input id="def" type="range" min="-26" max="26" step="0.5" value="0">
+    </div>
+    <div class="ctl">
+      <label>Input divergence (collimation) <span class="val" id="vDiv">0</span></label>
+      <input id="div" type="range" min="-1" max="1" step="0.02" value="0">
+    </div>
+    <div class="toggle">
+      <input id="coh" type="checkbox" checked>
+      <label for="coh" style="margin:0">Coherent pump+probe (show SBS interference fringes)</label>
+    </div>
+
+    <div class="read">
+      <div class="row"><span class="k">cone half-angle θ/2</span><span class="v" id="rHalf">–</span></div>
+      <div class="row"><span class="k">crossing angle θ</span><span class="v" id="rTheta">–</span></div>
+      <div class="row"><span class="k hi">co-prop. shift f_B</span><span class="v hi" id="rFb">–</span></div>
+      <div class="row"><span class="k">acoustic Λ</span><span class="v" id="rLam">–</span></div>
+      <div class="row"><span class="k">back-scatter limit</span><span class="v" id="rBack">–</span></div>
+    </div>
+    <div class="note">λ = 780.24 nm, n = 1.33 (water), v<sub>s</sub> = 1490 m/s.
+      Co-prop shift = (2n v<sub>s</sub>/λ)·sin(θ/2). The counter-propagating (θ=180°) value is the ceiling your geometry approaches only at θ→180°.</div>
+    <div class="legend">Intensity shown with √-stretch (hot colormap) so Bessel side-lobes stay visible.</div>
+  </div>
+</div>
+
+<script>
+const N=128, CX=N/2, RAP=50;        // grid, centre, aperture radius (px)
+const SIGR=2.5, SIGP=9.0;           // ring width, probe pupil width (px)
+const LAM=780.24e-9, NMED=1.33, VS=1490;
+
+// ---------- FFT (iterative radix-2) ----------
+function fft(re,im,inv){
+  const n=re.length;
+  for(let i=1,j=0;i<n;i++){
+    let bit=n>>1;
+    for(;j&bit;bit>>=1) j^=bit;
+    j^=bit;
+    if(i<j){let tr=re[i];re[i]=re[j];re[j]=tr;let ti=im[i];im[i]=im[j];im[j]=ti;}
+  }
+  for(let len=2;len<=n;len<<=1){
+    const ang=2*Math.PI/len*(inv?1:-1), wr=Math.cos(ang), wi=Math.sin(ang);
+    for(let i=0;i<n;i+=len){
+      let cwr=1,cwi=0;
+      for(let k=0;k<len/2;k++){
+        const a=i+k,b=a+len/2;
+        const vr=re[b]*cwr-im[b]*cwi, vi=re[b]*cwi+im[b]*cwr;
+        re[b]=re[a]-vr; im[b]=im[a]-vi; re[a]+=vr; im[a]+=vi;
+        const t=cwr*wr-cwi*wi; cwi=cwr*wi+cwi*wr; cwr=t;
+      }
+    }
+  }
+  if(inv){for(let i=0;i<n;i++){re[i]/=n;im[i]/=n;}}
+}
+function fft2(re,im){
+  const row=new Float64Array(N), rim=new Float64Array(N);
+  for(let y=0;y<N;y++){const o=y*N;
+    for(let x=0;x<N;x++){row[x]=re[o+x];rim[x]=im[o+x];}
+    fft(row,rim,false);
+    for(let x=0;x<N;x++){re[o+x]=row[x];im[o+x]=rim[x];}}
+  for(let x=0;x<N;x++){
+    for(let y=0;y<N;y++){const i=y*N+x;row[y]=re[i];rim[y]=im[i];}
+    fft(row,rim,false);
+    for(let y=0;y<N;y++){const i=y*N+x;re[i]=row[y];im[i]=rim[y];}}
+}
+
+// ---------- colormap (hot) ----------
+function hot(t){
+  t=Math.max(0,Math.min(1,t));
+  const r=Math.min(1,t*2.6), g=Math.min(1,Math.max(0,t*2.6-1)), b=Math.min(1,Math.max(0,t*2.6-2.2));
+  return [r*255|0,g*255|0,b*255|0];
+}
+function draw(canvas,arr){
+  let mx=0; for(let i=0;i<arr.length;i++) if(arr[i]>mx) mx=arr[i];
+  if(mx<=0) mx=1;
+  const ctx=canvas.getContext('2d');
+  const img=ctx.createImageData(N,N);
+  for(let i=0;i<arr.length;i++){
+    const t=Math.sqrt(arr[i]/mx);            // sqrt stretch
+    const [r,g,b]=hot(t);
+    img.data[i*4]=r; img.data[i*4+1]=g; img.data[i*4+2]=b; img.data[i*4+3]=255;
+  }
+  ctx.putImageData(img,0,0);
+}
+function shift2(arr){ // fftshift into a fresh array
+  const out=new Float64Array(N*N), h=N/2;
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++)
+    out[((y+h)%N)*N+((x+h)%N)]=arr[y*N+x];
+  return out;
+}
+
+// ---------- elements ----------
+const E=id=>document.getElementById(id);
+const ring=E('ring'),na=E('na'),off=E('off'),def=E('def'),divg=E('div'),coh=E('coh');
+const pupilC=E('pupil'), ccdC=E('ccd');
+
+function render(){
+  const ringFrac=+ring.value, NA=+na.value, S=+off.value, defC=+def.value, dv=+divg.value;
+  const coherent=coh.checked;
+
+  // divergence resizes the ring + adds curvature
+  const effFrac=Math.max(0,Math.min(1, ringFrac*(1+0.4*dv)));
+  const ringR=effFrac*RAP;
+
+  // ---- build pupil fields ----
+  const reP=new Float64Array(N*N), imP=new Float64Array(N*N); // pump
+  const reB=new Float64Array(N*N), imB=new Float64Array(N*N); // probe
+  const pupI=new Float64Array(N*N);                            // pupil intensity
+  let normPump=0, normProbe=0;
+  // first pass amplitudes for normalisation
+  const ampPump=new Float64Array(N*N), ampProbe=new Float64Array(N*N);
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+    const i=y*N+x, dx=x-CX, dy=y-CX, r2=dx*dx+dy*dy, r=Math.sqrt(r2);
+    const ap=(r<=RAP)?1:0;
+    const ap_=ap;
+    const pu=ap_*Math.exp(-((r-ringR)*(r-ringR))/(2*SIGR*SIGR));
+    const pr=ap_*Math.exp(-r2/(2*SIGP*SIGP));
+    ampPump[i]=pu; ampProbe[i]=pr;
+    normPump+=pu*pu; normProbe+=pr*pr;
+  }
+  const kP=normPump>0?1/Math.sqrt(normPump):0, kB=normProbe>0?1/Math.sqrt(normProbe):0;
+
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+    const i=y*N+x, dx=x-CX, dy=y-CX, r2=dx*dx+dy*dy;
+    const common=(defC + dv*8)*(r2/(RAP*RAP));        // defocus + divergence curvature (rad)
+    const pPump=common;
+    const pProbe=common + 2*Math.PI*S*dx/N;            // linear phase -> lateral CCD shift
+    const aPu=ampPump[i]*kP, aPr=ampProbe[i]*kB;
+    reP[i]=aPu*Math.cos(pPump); imP[i]=aPu*Math.sin(pPump);
+    reB[i]=aPr*Math.cos(pProbe); imB[i]=aPr*Math.sin(pProbe);
+    pupI[i]=aPu*aPu+aPr*aPr;
+  }
+
+  // ---- propagate to CCD ----
+  let ccdI;
+  if(coherent){
+    const re=new Float64Array(N*N), im=new Float64Array(N*N);
+    for(let i=0;i<N*N;i++){re[i]=reP[i]+reB[i]; im[i]=imP[i]+imB[i];}
+    fft2(re,im);
+    ccdI=new Float64Array(N*N);
+    for(let i=0;i<N*N;i++) ccdI[i]=re[i]*re[i]+im[i]*im[i];
+  }else{
+    const re1=reP.slice(), im1=imP.slice(); fft2(re1,im1);
+    const re2=reB.slice(), im2=imB.slice(); fft2(re2,im2);
+    ccdI=new Float64Array(N*N);
+    for(let i=0;i<N*N;i++) ccdI[i]=re1[i]*re1[i]+im1[i]*im1[i]+re2[i]*re2[i]+im2[i]*im2[i];
+  }
+
+  draw(pupilC, pupI);
+  draw(ccdC, shift2(ccdI));
+
+  // ---- readouts ----
+  let sinT=effFrac*NA/NMED;
+  sinT=Math.max(0,Math.min(0.99999,sinT));
+  const theta=Math.asin(sinT);                 // crossing angle (rad)
+  const half=theta/2;
+  const fB=(2*NMED*VS/LAM)*Math.sin(half);      // Hz
+  const lam=LAM/(2*NMED*Math.sin(half));        // acoustic wavelength (m)
+  const fBack=(2*NMED*VS/LAM);                  // theta=180 ceiling
+  E('vRing').textContent=ringFrac.toFixed(2);
+  E('vNA').textContent=NA.toFixed(2);
+  E('vOff').textContent=S+' px';
+  E('vDef').textContent=defC.toFixed(1);
+  E('vDiv').textContent=dv.toFixed(2);
+  E('rHalf').textContent=(half*180/Math.PI).toFixed(1)+'°';
+  E('rTheta').textContent=(theta*180/Math.PI).toFixed(1)+'°';
+  E('rFb').textContent=(fB/1e9).toFixed(3)+' GHz';
+  E('rLam').textContent=isFinite(lam)?(lam*1e9).toFixed(0)+' nm':'∞';
+  E('rBack').textContent=(fBack/1e9).toFixed(2)+' GHz  (θ=180°)';
+
+  E('ccdcap').textContent = +def.value!==0
+    ? 'Defocused: pump shows as a ring encircling the probe spot — the cone is resolved.'
+    : (S!==0 ? 'Probe offset from axis: spots separate, overlap (and fringes) collapse.'
+             : (coherent ? 'Overlapped & coherent: concentric fringes = the moving SBS grating.'
+                         : 'Overlapped, incoherent sum: Bessel core over probe spot, no fringes.'));
+}
+
+[ring,na,off,def,divg].forEach(el=>el.addEventListener('input',render));
+coh.addEventListener('change',render);
+render();
+</script>

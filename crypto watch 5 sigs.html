@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Crypto Signal Dashboard (Top 50)</title>
+
+<style>
+body{
+  font-family: Arial, sans-serif;
+  background:#0f1115;
+  color:#e6e6e6;
+  margin:0;
+  padding:12px;
+}
+
+h1{font-size:16px;margin:0 0 10px}
+
+.topbar{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  flex-wrap:wrap;
+  margin-bottom:10px;
+}
+
+button{
+  background:#1c2230;
+  border:1px solid #2a3345;
+  color:#fff;
+  padding:6px 10px;
+  cursor:pointer;
+  border-radius:6px;
+}
+
+button:hover{background:#263044}
+
+input{
+  padding:6px 10px;
+  background:#1c2230;
+  border:1px solid #2a3345;
+  color:#fff;
+  border-radius:6px;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:13px;
+}
+
+th,td{
+  padding:8px;
+  border-bottom:1px solid #222b3a;
+  text-align:left;
+}
+
+th{cursor:pointer;color:#9aa4b2}
+
+.buy{color:#2ecc71}
+.sell{color:#ff5c5c}
+.hold{color:#f1c40f}
+
+.small{font-size:11px;color:#888}
+
+.row:hover{background:#1a2030}
+</style>
+</head>
+
+<body>
+
+<h1>📊 Crypto Signal Dashboard (Top 50)</h1>
+
+<div class="topbar">
+  <button onclick="load()">Refresh</button>
+  <input id="search" placeholder="Search symbol..." />
+  <span class="small" id="status">Loading...</span>
+</div>
+
+<table>
+<thead>
+<tr>
+  <th>#</th>
+  <th>Coin</th>
+  <th>Price</th>
+  <th>24h</th>
+  <th>RSI</th>
+  <th>EMA</th>
+  <th>Signal</th>
+</tr>
+</thead>
+<tbody id="body"></tbody>
+</table>
+
+<script>
+
+let data = [];
+
+function rsi(values, period=14){
+  if(values.length<period+1) return 50;
+  let gain=0,loss=0;
+  for(let i=values.length-period;i<values.length;i++){
+    let diff=values[i]-values[i-1];
+    if(diff>0) gain+=diff;
+    else loss-=diff;
+  }
+  let rs=(gain/period)/(loss/period||1);
+  return 100-(100/(1+rs));
+}
+
+function ema(values, period){
+  let k=2/(period+1);
+  let ema=values[0];
+  for(let i=1;i<values.length;i++){
+    ema=values[i]*k+ema*(1-k);
+  }
+  return ema;
+}
+
+function signal(rsiVal, emaFast, emaSlow){
+  if(rsiVal<35 && emaFast>emaSlow) return "BUY";
+  if(rsiVal>65 && emaFast<emaSlow) return "SELL";
+  return "HOLD";
+}
+
+async function load(){
+  document.getElementById("status").innerText="Loading...";
+
+  const url =
+  "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&sparkline=true";
+
+  try{
+    const res = await fetch(url);
+    const coins = await res.json();
+
+    data = coins.map((c,i)=>{
+
+      const prices = c.sparkline_in_7d.price;
+
+      const r = rsi(prices);
+      const efast = ema(prices.slice(-10),5);
+      const eslow = ema(prices.slice(-20),10);
+
+      const sig = signal(r, efast, eslow);
+
+      return {
+        rank:i+1,
+        name:c.name,
+        symbol:c.symbol.toUpperCase(),
+        price:c.current_price,
+        change:c.price_change_percentage_24h,
+        rsi:r.toFixed(1),
+        signal:sig
+      };
+    });
+
+    render();
+    document.getElementById("status").innerText="Updated ✔";
+
+  } catch(e){
+    document.getElementById("status").innerText="Error loading API";
+    console.log(e);
+  }
+}
+
+function render(){
+  const q=document.getElementById("search").value.toLowerCase();
+  const body=document.getElementById("body");
+
+  body.innerHTML="";
+
+  data
+  .filter(d=>d.symbol.toLowerCase().includes(q))
+  .forEach(d=>{
+
+    const cls=
+      d.signal==="BUY"?"buy":
+      d.signal==="SELL"?"sell":"hold";
+
+    body.innerHTML+=`
+    <tr class="row">
+      <td>${d.rank}</td>
+      <td>${d.name} (${d.symbol})</td>
+      <td>$${d.price.toFixed(4)}</td>
+      <td class="${d.change>=0?'buy':'sell'}">
+        ${d.change?.toFixed(2)}%
+      </td>
+      <td>${d.rsi}</td>
+      <td>-</td>
+      <td class="${cls}">${d.signal}</td>
+    </tr>`;
+  });
+}
+
+document.getElementById("search")
+.addEventListener("input",render);
+
+load();
+setInterval(load,120000);
+
+</script>
+
+</body>
+</html>

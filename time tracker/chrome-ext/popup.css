@@ -1,0 +1,64 @@
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  width: 380px;
+  min-height: 460px;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: #f0f2f5;
+  color: #1a1a2e;
+  padding: 12px;
+}
+header { text-align:center; margin-bottom:10px; }
+h1 { font-size:16px; font-weight:700; margin-bottom:8px; }
+h2 { font-size:13px; font-weight:600; margin-bottom:8px; }
+
+/* tabs */
+nav { display:flex; gap:6px; justify-content:center; }
+.tab {
+  padding:6px 14px; border-radius:7px; font-size:12px; font-weight:600;
+  border:none; cursor:pointer; background:#fff; color:#555; transition:.15s;
+}
+.tab.active { background:#1a5276; color:#fff; }
+
+/* cards */
+section {
+  background:#fff; border-radius:10px; border:1px solid #e0e0e0;
+  padding:12px; margin-top:10px;
+}
+.bar { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+.bar input, .bar select {
+  font-size:13px; padding:4px 8px; border-radius:6px;
+  border:1px solid #e0e0e0; background:#fff; color:#1a1a2e;
+}
+#totalBadge { font-size:13px; font-weight:600; color:#1a5276; }
+#totalBadge.over { color:#c0392b; }
+
+/* sliders */
+.slider-row {
+  display:flex; align-items:center; gap:6px; margin-bottom:5px;
+}
+.slider-row .dot {
+  width:10px; height:10px; border-radius:50%; flex-shrink:0;
+}
+.slider-row .lbl { width:120px; font-size:11.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.slider-row input[type=range] { flex:1; height:4px; }
+.slider-row .val { width:36px; text-align:right; font-size:12px; font-weight:600; font-variant-numeric:tabular-nums; }
+
+.warn { color:#c0392b; font-size:11px; margin-top:4px; }
+
+/* history list */
+.hist-item {
+  display:flex; align-items:center; gap:8px; padding:8px 10px;
+  border-radius:7px; background:#f0f2f5; margin-bottom:5px;
+  cursor:pointer; border:1px solid transparent; transition:.15s;
+}
+.hist-item:hover { border-color:#1a5276; }
+.hist-date { font-weight:600; font-size:12px; width:82px; }
+.hist-total { font-size:12px; color:#555; width:38px; }
+.hist-tags { display:flex; gap:4px; flex-wrap:wrap; flex:1; }
+.hist-tag {
+  font-size:10px; padding:2px 7px; border-radius:10px; font-weight:600;
+}
+
+canvas { display:block; margin:8px auto 0; }
+
+.empty { font-size:12px; color:#888; text-align:center; padding:20px 0; }

@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Laser Welding — Basics, Physics & Applications (Interactive Lecture Notes)</title>
+<style>
+  :root{
+    --ink:#0a0e14; --panel:#0f141c; --panel2:#0c1119; --line:#1e2733; --line2:#2a3848;
+    --txt:#eef2f7; --dim:#8b97a6; --dim2:#5f6c7c;
+    --beam:#2bd4e8;            /* coherent light / cold */
+    --amber:#f4a52a;          /* heating */
+    --molten:#ff5e2b;         /* melt */
+    --deep:#b21f12;           /* hot core */
+    --good:#56cc8a; --warn:#f4c04a; --bad:#ff5757;
+    --serif:"Iowan Old Style","Charter","Palatino Linotype",Georgia,serif;
+    --sans:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:
+      radial-gradient(900px 500px at 80% -8%, rgba(43,212,232,.07), transparent 60%),
+      radial-gradient(700px 400px at 0% 0%, rgba(255,94,43,.05), transparent 55%),
+      var(--ink);
+    color:var(--txt); font-family:var(--sans); line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1080px; margin:0 auto; padding:0 22px}
+
+  /* ---- top nav ---- */
+  nav.top{position:sticky; top:0; z-index:50; backdrop-filter:blur(10px);
+    background:rgba(10,14,20,.82); border-bottom:1px solid var(--line)}
+  nav.top .wrap{display:flex; align-items:center; gap:8px; height:54px; overflow-x:auto}
+  nav.top .brand{font-family:var(--mono); font-size:12px; letter-spacing:.18em;
+    text-transform:uppercase; color:var(--beam); white-space:nowrap; padding-right:10px;
+    border-right:1px solid var(--line); margin-right:4px}
+  nav.top a{color:var(--dim); text-decoration:none; font-size:13px; white-space:nowrap;
+    padding:6px 9px; border-radius:6px; transition:.15s}
+  nav.top a:hover{color:var(--txt); background:var(--panel)}
+
+  /* ---- hero ---- */
+  header.hero{padding:64px 0 34px; border-bottom:1px solid var(--line); position:relative; overflow:hidden}
+  .eyebrow{font-family:var(--mono); font-size:12px; letter-spacing:.34em; text-transform:uppercase;
+    color:var(--dim); margin-bottom:18px}
+  h1{font-family:var(--sans); font-weight:800; letter-spacing:-.02em; line-height:1.02;
+    font-size:clamp(34px,6vw,62px); margin:0 0 14px}
+  h1 .glow{background:linear-gradient(92deg,var(--beam),var(--amber) 55%,var(--molten));
+    -webkit-background-clip:text; background-clip:text; color:transparent}
+  .lede{font-family:var(--serif); font-size:clamp(17px,2.3vw,20px); color:#d4dbe4; max-width:62ch}
+  .meta-row{display:flex; flex-wrap:wrap; gap:10px; margin-top:24px}
+  .chip{font-family:var(--mono); font-size:11.5px; letter-spacing:.06em; color:var(--dim);
+    border:1px solid var(--line2); border-radius:999px; padding:5px 12px}
+  .beamline{position:absolute; left:0; right:0; bottom:-1px; height:2px;
+    background:linear-gradient(90deg,transparent,var(--beam),var(--molten),transparent); opacity:.6}
+
+  /* ---- sections ---- */
+  section{padding:48px 0; border-bottom:1px solid var(--line)}
+  .sec-no{font-family:var(--mono); font-size:12px; letter-spacing:.2em; color:var(--beam)}
+  h2{font-size:clamp(24px,3.4vw,34px); font-weight:750; letter-spacing:-.01em; margin:8px 0 6px}
+  h3{font-size:19px; font-weight:700; margin:30px 0 8px; color:#eaf0f6}
+  p,li{font-family:var(--serif); font-size:17px; color:#dbe2ea}
+  .lead{color:#aeb9c5; max-width:70ch}
+  a.inline{color:var(--beam); text-decoration:none; border-bottom:1px dotted var(--line2)}
+  ul.clean{padding-left:0; list-style:none}
+  ul.clean>li{position:relative; padding-left:22px; margin:9px 0}
+  ul.clean>li::before{content:""; position:absolute; left:2px; top:11px; width:7px; height:7px;
+    border-radius:50%; background:linear-gradient(135deg,var(--beam),var(--molten))}
+  strong{color:#fff; font-weight:700}
+  .key{color:var(--amber); font-weight:700; font-family:var(--sans)}
+
+  .obj{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:14px; margin-top:18px}
+  .obj .card{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px 18px}
+  .obj .n{font-family:var(--mono); color:var(--beam); font-size:13px}
+  .obj p{font-size:15px; margin:6px 0 0; font-family:var(--sans); color:#cdd6e0}
+
+  /* equation block */
+  .eq{font-family:var(--mono); background:var(--panel2); border:1px solid var(--line);
+    border-left:3px solid var(--beam); border-radius:10px; padding:14px 18px; margin:16px 0;
+    font-size:16px; color:#eaf2f8; overflow-x:auto}
+  .eq small{color:var(--dim); font-family:var(--sans)}
+  sub,sup{font-size:.72em}
+
+  /* table */
+  .tbl{width:100%; border-collapse:collapse; margin:18px 0; font-family:var(--sans); font-size:14px}
+  .tbl th,.tbl td{text-align:left; padding:10px 12px; border-bottom:1px solid var(--line)}
+  .tbl th{font-family:var(--mono); font-size:11.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--dim)}
+  .tbl tr:last-child td{border-bottom:none}
+  .tbl td.num{font-family:var(--mono); color:#dbe6f0}
+
+  /* callouts */
+  .note{border:1px solid var(--line); border-left:3px solid var(--amber); background:rgba(244,165,42,.06);
+    border-radius:10px; padding:14px 18px; margin:18px 0}
+  .note .t{font-family:var(--mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--amber); margin-bottom:4px}
+  .note p{font-family:var(--sans); font-size:15px; margin:0; color:#e3dcc9}
+
+  /* two regime cards */
+  .regimes{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:18px}
+  .regime{border:1px solid var(--line); border-radius:14px; padding:18px 20px; background:var(--panel)}
+  .regime.cond{border-top:3px solid var(--amber)}
+  .regime.key{border-top:3px solid var(--molten)}
+  .regime h4{margin:0 0 10px; font-family:var(--sans); font-size:17px}
+  .regime .tag{font-family:var(--mono); font-size:11px; letter-spacing:.12em; padding:3px 8px; border-radius:6px}
+  .regime.cond .tag{background:rgba(244,165,42,.16); color:var(--amber)}
+  .regime.key .tag{background:rgba(255,94,43,.16); color:var(--molten)}
+  .regime ul{margin:10px 0 0}
+  .regime li{font-family:var(--sans); font-size:14px; color:#cdd6e0}
+
+  /* ===== SIMULATOR ===== */
+  .sim{background:linear-gradient(180deg,#0c1119,#0a0e15); border:1px solid var(--line2);
+    border-radius:18px; padding:0; overflow:hidden; margin-top:22px; box-shadow:0 20px 60px -30px rgba(0,0,0,.8)}
+  .sim-head{display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:16px 20px; border-bottom:1px solid var(--line)}
+  .sim-head .title{font-family:var(--mono); font-size:12px; letter-spacing:.18em; text-transform:uppercase; color:var(--beam)}
+  .sim-head .mode-badge{font-family:var(--mono); font-size:13px; font-weight:700; padding:6px 14px; border-radius:999px;
+    letter-spacing:.05em; border:1px solid var(--line2); transition:.25s}
+  .sim-body{display:grid; grid-template-columns:300px 1fr; gap:0}
+  .controls{padding:20px; border-right:1px solid var(--line); background:var(--panel2)}
+  .ctl{margin-bottom:18px}
+  .ctl .lab{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:7px}
+  .ctl .lab .name{font-family:var(--sans); font-size:13px; color:#cdd6e0}
+  .ctl .lab .val{font-family:var(--mono); font-size:14px; color:var(--beam); font-weight:600}
+  input[type=range]{-webkit-appearance:none; width:100%; height:5px; border-radius:5px;
+    background:linear-gradient(90deg,var(--beam),#26414f); outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:17px; height:17px; border-radius:50%;
+    background:#eef6fb; border:2px solid var(--beam); cursor:pointer; box-shadow:0 0 10px rgba(43,212,232,.5)}
+  input[type=range]::-moz-range-thumb{width:15px; height:15px; border-radius:50%; background:#eef6fb;
+    border:2px solid var(--beam); cursor:pointer}
+  select{width:100%; background:var(--panel); color:var(--txt); border:1px solid var(--line2);
+    border-radius:8px; padding:9px 10px; font-family:var(--sans); font-size:14px}
+  .presets{margin-top:6px}
+  .presets .ptit{font-family:var(--mono); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--dim2); margin-bottom:8px}
+  .presets button{display:block; width:100%; text-align:left; margin-bottom:6px; cursor:pointer;
+    background:var(--panel); color:#cdd6e0; border:1px solid var(--line); border-radius:8px;
+    padding:8px 11px; font-family:var(--sans); font-size:12.5px; transition:.15s}
+  .presets button:hover{border-color:var(--beam); color:#fff; background:#10171f}
+
+  .stage{padding:18px 20px 22px; min-width:0}
+  .views{display:grid; grid-template-columns:1fr; gap:16px}
+  .viewbox{background:#070b11; border:1px solid var(--line); border-radius:12px; padding:10px 12px}
+  .viewbox .vlab{font-family:var(--mono); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--dim); margin-bottom:4px; display:flex; justify-content:space-between}
+  svg{display:block; width:100%; height:auto}
+
+  .readouts{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:16px}
+  .ro{background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:11px 12px}
+  .ro .k{font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--dim2)}
+  .ro .v{font-family:var(--mono); font-size:17px; font-weight:700; color:#eaf2f8; margin-top:3px; line-height:1.1}
+  .ro .u{font-family:var(--sans); font-size:11px; color:var(--dim)}
+
+  .tip{margin-top:14px; border:1px solid var(--line); border-left:3px solid var(--beam);
+    background:rgba(43,212,232,.05); border-radius:10px; padding:12px 16px;
+    font-family:var(--sans); font-size:14px; color:#d2dbe5; transition:.2s}
+  .tip b{color:var(--beam)}
+
+  /* applications grid */
+  .apps{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px; margin-top:18px}
+  .app{border:1px solid var(--line); border-radius:12px; padding:16px 18px; background:var(--panel);
+    transition:.18s}
+  .app:hover{border-color:var(--line2); transform:translateY(-2px)}
+  .app .ic{font-family:var(--mono); font-size:11px; letter-spacing:.1em; color:var(--molten); text-transform:uppercase}
+  .app h4{margin:8px 0 6px; font-family:var(--sans); font-size:16px}
+  .app p{font-family:var(--sans); font-size:13.5px; color:#bac4cf; margin:0}
+
+  /* takeaways */
+  .takeaways{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:14px; margin-top:18px}
+  .tk{border:1px solid var(--line); border-radius:12px; padding:16px 18px; background:
+    linear-gradient(180deg,var(--panel),var(--panel2))}
+  .tk .n{font-family:var(--mono); color:var(--beam); font-size:22px; font-weight:700}
+  .tk p{font-family:var(--sans); font-size:14px; color:#ccd6e0; margin:6px 0 0}
+
+  .refs{font-family:var(--sans); font-size:14px; color:#aeb9c5}
+  .refs li{font-family:var(--sans); font-size:14px; margin:8px 0; color:#aeb9c5}
+
+  footer{padding:40px 0 60px}
+  footer p{font-family:var(--mono); font-size:12px; color:var(--dim2); letter-spacing:.04em}
+
+  @media (max-width:840px){
+    .sim-body{grid-template-columns:1fr}
+    .controls{border-right:none; border-bottom:1px solid var(--line)}
+    .regimes{grid-template-columns:1fr}
+    .readouts{grid-template-columns:repeat(2,1fr)}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none !important; transition:none !important}}
+</style>
+</head>
+<body>
+
+<nav class="top"><div class="wrap">
+  <span class="brand">◢ LBW</span>
+  <a href="#intro">Intro</a>
+  <a href="#interaction">Light–Matter</a>
+  <a href="#regimes">Regimes</a>
+  <a href="#sim">Simulator</a>
+  <a href="#parameters">Parameters</a>
+  <a href="#sources">Sources</a>
+  <a href="#defects">Defects</a>
+  <a href="#applications">Applications</a>
+  <a href="#takeaways">Takeaways</a>
+</div></nav>
+
+<header class="hero"><div class="wrap">
+  <div class="eyebrow">Lecture Notes · Laser Materials Processing</div>
+  <h1>Laser Welding<br><span class="glow">basics, physics & applications</span></h1>
+  <p class="lede">A focused beam of coherent light becomes a heat source so intense it can melt steel in milliseconds. These notes build the intuition first — why a laser can weld at all — then the physics that splits the process into two regimes, the parameters you turn in the lab, and where industry actually uses it. A live simulator lets you watch the weld pool respond as you change the dials.</p>
+  <div class="meta-row">
+    <span class="chip">conduction ↔ keyhole</span>
+    <span class="chip">power density · line energy</span>
+    <span class="chip">fiber · disk · CO₂ · diode</span>
+    <span class="chip">interactive simulation</span>
+  </div>
+  <div class="beamline"></div>
+</div></header>
+
+<!-- =================== INTRO =================== -->
+<section id="intro"><div class="wrap">
+  <div class="sec-no">01 — Introduction</div>
+  <h2>What makes a laser a welding tool</h2>
+  <p class="lead"><strong>Laser beam welding (LBW)</strong> fuses materials by focusing a laser onto a joint until the metal melts and solidifies into a single piece. The laser is not magic — it is simply the most <em>concentrated</em> heat source we can practically aim. The whole subject flows from a single quantity: how many watts you can pack onto a square centimetre.</p>
+
+  <h3>Why engineers reach for it</h3>
+  <ul class="clean">
+    <li><strong>High energy density</strong> → deep, narrow welds at high speed, with very little heat spread into the surrounding part.</li>
+    <li><strong>Low distortion &amp; small heat-affected zone (HAZ)</strong> → precision parts stay dimensionally stable; ideal near electronics or thin sheet.</li>
+    <li><strong>Non-contact &amp; single-sided</strong> → no electrode wear, no filler required for many joints, access from one side only.</li>
+    <li><strong>Automatable &amp; fast</strong> → fiber-delivered beams steer through robots and galvo scanners at metres per second.</li>
+  </ul>
+
+  <h3>Where it sits among welding processes</h3>
+  <p class="lead">Every fusion process is really a contest of <span class="key">power density</span>. Crank it up and the weld gets deeper, narrower, and cleaner — until you tip from melting into vaporising.</p>
+  <table class="tbl">
+    <tr><th>Process</th><th>Typical power density</th><th>Character of weld</th></tr>
+    <tr><td>Oxy-fuel flame</td><td class="num">~10³ W/cm²</td><td>Wide, shallow, large HAZ</td></tr>
+    <tr><td>Arc (TIG / MIG)</td><td class="num">~10⁴ W/cm²</td><td>Moderate penetration, broad bead</td></tr>
+    <tr><td>Plasma / laser conduction</td><td class="num">~10⁵ W/cm²</td><td>Smooth, shallow fusion</td></tr>
+    <tr><td>Laser keyhole / electron beam</td><td class="num">10⁶–10⁸ W/cm²</td><td>Deep, narrow, high aspect ratio</td></tr>
+  </table>
+</div></section>
+
+<!-- =================== LIGHT–MATTER =================== -->
+<section id="interaction"><div class="wrap">
+  <div class="sec-no">02 — Laser–material interaction</div>
+  <h2>Getting the light <em>into</em> the metal</h2>
+  <p class="lead">Before a laser can heat anything, the surface has to <strong>absorb</strong> it rather than reflect it. For an opaque metal, absorptivity <span class="eq" style="display:inline; padding:2px 8px; border-left:none">A = 1 − R</span> where R is reflectivity. This single number decides how much of your expensive laser power actually does work — and it is frustratingly variable.</p>
+
+  <h3>What absorptivity depends on</h3>
+  <ul class="clean">
+    <li><strong>Wavelength.</strong> Metals get shinier at longer wavelengths (Drude behaviour). A 1.07 µm fiber laser couples far better to steel than a 10.6 µm CO₂ laser. <strong>Copper and gold are nearly mirrors in the infrared</strong> — the reason green (515 nm) and blue (450 nm) lasers now dominate EV-battery copper welding.</li>
+    <li><strong>Temperature.</strong> As metal heats, absorptivity climbs — a self-reinforcing effect once heating begins.</li>
+    <li><strong>Surface condition.</strong> Oxide layers, roughness, and coatings raise absorption; a polished mirror surface fights you.</li>
+    <li><strong>Angle &amp; polarization.</strong> Matter at steep incidence and inside the keyhole walls.</li>
+  </ul>
+
+  <div class="note">
+    <div class="t">The keyhole's secret weapon</div>
+    <p>Once the beam drills a vapour cavity (a "keyhole"), light bounces many times off the molten walls before it can escape. Each bounce deposits a little more energy. This <strong>multiple-reflection trapping</strong> drives the <em>effective</em> absorptivity from maybe 0.30 up to 0.80–0.95 — even for a metal that was shiny when cold. This is why keyhole welding is so efficient, and the simulator below models it directly.</p>
+  </div>
+</div></section>
+
+<!-- =================== REGIMES =================== -->
+<section id="regimes"><div class="wrap">
+  <div class="sec-no">03 — The two regimes</div>
+  <h2>Conduction vs. keyhole — the central idea</h2>
+  <p class="lead">Define <strong>irradiance</strong> (power density) as power divided by focused spot area:</p>
+  <div class="eq">I = P ⁄ (π r²) = P ⁄ (π (d/2)²)&nbsp;&nbsp;&nbsp;<small>[ W/cm² ]&nbsp; — smaller spot or higher power ⇒ higher I</small></div>
+  <p class="lead">Push I past a material-dependent threshold (~10⁶ W/cm² for steel) and the process flips from gently melting to violently vaporising. That flip defines the two welding modes.</p>
+
+  <div class="regimes">
+    <div class="regime cond">
+      <h4>Conduction mode <span class="tag">I ≲ 10⁶ W/cm²</span></h4>
+      <p style="font-family:var(--sans);font-size:14px;color:#cdd6e0;margin:0">The surface melts; heat flows <em>downward and outward by conduction</em>. The pool is wide and shallow.</p>
+      <ul>
+        <li>Aspect ratio (depth/width) ≲ 1 — a smooth, rounded dish</li>
+        <li>Low spatter, clean cosmetic bead</li>
+        <li>Best for thin sheet, hermetic seals, visible joints</li>
+        <li>Lower coupling efficiency (uses the metal's bare absorptivity)</li>
+      </ul>
+    </div>
+    <div class="regime key">
+      <h4>Keyhole mode <span class="tag">I ≳ 10⁶ W/cm²</span></h4>
+      <p style="font-family:var(--sans);font-size:14px;color:#cdd6e0;margin:0">Intensity vaporises metal; recoil pressure opens a <em>vapour capillary</em> lined with melt. The beam plunges deep.</p>
+      <ul>
+        <li>Aspect ratio up to ~10 — deep, narrow "nail" profile</li>
+        <li>Very high coupling (multiple-reflection trapping)</li>
+        <li>Best for thick sections, structural, high speed</li>
+        <li>Risk of porosity &amp; spatter from keyhole instability</li>
+      </ul>
+    </div>
+  </div>
+  <p class="lead" style="margin-top:18px">The transition itself is simply the point where I reaches the threshold. Everything the lab technician does — choosing power, focus, and speed — is ultimately steering the process across this boundary. Time to make it tangible.</p>
+</div></section>
+
+<!-- =================== SIMULATOR =================== -->
+<section id="sim"><div class="wrap">
+  <div class="sec-no">04 — Interactive simulation</div>
+  <h2>Drive the weld yourself</h2>
+  <p class="lead">Adjust power, welding speed, focused spot size, and material. The model computes power density, the resulting absorptivity (rising sharply once the keyhole forms), the line energy delivered, and from an energy balance the weld's depth and width. Watch the cross-section morph between a shallow conduction dish and a deep keyhole finger, and watch where you land on the process map.</p>
+
+  <div class="sim">
+    <div class="sim-head">
+      <span class="title">◢ LBW Process Simulator</span>
+      <span id="modeBadge" class="mode-badge">— mode —</span>
+    </div>
+    <div class="sim-body">
+      <!-- controls -->
+      <div class="controls">
+        <div class="ctl">
+          <div class="lab"><span class="name">Laser power · P</span><span class="val"><span id="pVal">2500</span> W</span></div>
+          <input id="p" type="range" min="50" max="10000" step="50" value="2500">
+        </div>
+        <div class="ctl">
+          <div class="lab"><span class="name">Welding speed · v</span><span class="val"><span id="vVal">50</span> mm/s</span></div>
+          <input id="v" type="range" min="2" max="200" step="1" value="50">
+        </div>
+        <div class="ctl">
+          <div class="lab"><span class="name">Focused spot · d</span><span class="val"><span id="dVal">300</span> µm</span></div>
+          <input id="d" type="range" min="50" max="1000" step="10" value="300">
+        </div>
+        <div class="ctl">
+          <div class="lab"><span class="name">Material</span><span class="val" id="matVal">Mild Steel</span></div>
+          <select id="mat">
+            <option value="steel">Mild Steel</option>
+            <option value="stainless">Stainless 304</option>
+            <option value="aluminum">Aluminium 6061</option>
+            <option value="titanium">Ti-6Al-4V</option>
+            <option value="copper">Copper</option>
+          </select>
+        </div>
+        <div class="presets">
+          <div class="ptit">Quick scenarios</div>
+          <button data-p="600"  data-v="30" data-d="650" data-m="steel">Thin-sheet conduction weld</button>
+          <button data-p="4000" data-v="40" data-d="200" data-m="steel">Deep keyhole (structural)</button>
+          <button data-p="300"  data-v="10" data-d="90"  data-m="stainless">Stainless micro-weld</button>
+          <button data-p="4000" data-v="40" data-d="200" data-m="aluminum">Aluminium — reflective</button>
+          <button data-p="3000" data-v="30" data-d="150" data-m="copper">Copper @ IR — the hard case</button>
+        </div>
+      </div>
+
+      <!-- stage -->
+      <div class="stage">
+        <div class="views">
+          <div class="viewbox">
+            <div class="vlab"><span>Top view — travelling melt pool</span><span id="topNote">steady state</span></div>
+            <svg id="topSvg" viewBox="0 0 420 170" aria-label="Top view of weld pool"></svg>
+          </div>
+          <div class="viewbox">
+            <div class="vlab"><span>Transverse cross-section</span><span id="xsNote"></span></div>
+            <svg id="xsSvg" viewBox="0 0 420 330" aria-label="Weld cross-section"></svg>
+          </div>
+          <div class="viewbox">
+            <div class="vlab"><span>Process map — irradiance (log scale)</span><span>heating · conduction · keyhole</span></div>
+            <svg id="mapSvg" viewBox="0 0 420 78" aria-label="Process map"></svg>
+          </div>
+        </div>
+
+        <div class="readouts">
+          <div class="ro"><div class="k">Power density</div><div class="v" id="roI">—</div><div class="u">W/cm²</div></div>
+          <div class="ro"><div class="k">Line energy</div><div class="v" id="roEl">—</div><div class="u">J/mm</div></div>
+          <div class="ro"><div class="k">Effective absorptivity</div><div class="v" id="roA">—</div><div class="u">of incident power</div></div>
+          <div class="ro"><div class="k">Interaction time</div><div class="v" id="roT">—</div><div class="u">ms (d ⁄ v)</div></div>
+          <div class="ro"><div class="k">Penetration depth</div><div class="v" id="roD">—</div><div class="u">mm</div></div>
+          <div class="ro"><div class="k">Weld width</div><div class="v" id="roW">—</div><div class="u">mm</div></div>
+          <div class="ro"><div class="k">Aspect ratio</div><div class="v" id="roAR">—</div><div class="u">depth ⁄ width</div></div>
+          <div class="ro"><div class="k">Regime</div><div class="v" id="roMode" style="font-size:14px">—</div><div class="u" id="roModeU">&nbsp;</div></div>
+        </div>
+
+        <div class="tip" id="tip">Move a slider to begin.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note" style="margin-top:20px">
+    <div class="t">How to read it · for the lecturer</div>
+    <p>Good in-class demonstrations: (1) hold P and d fixed, raise speed — watch line energy and penetration fall together. (2) Hold P and v, shrink the spot — power density climbs and the weld snaps from dish to keyhole. (3) Switch to copper at infrared and ask why nothing happens until you push the power hard — then introduce green/blue lasers. The model is deliberately simplified (room-temperature properties, energy-balance penetration) so the trends are clear; real welds add fluid flow, plume, and keyhole dynamics on top.</p>
+  </div>
+</div></section>
+
+<!-- =================== PARAMETERS =================== -->
+<section id="parameters"><div class="wrap">
+  <div class="sec-no">05 — Parameters &amp; governing relations</div>
+  <h2>The dials and what they control</h2>
+  <p class="lead">Three numbers dominate practice. Two are independent settings; the third is what you actually care about.</p>
+
+  <h3>Line (heat) input — the master control</h3>
+  <div class="eq">E<sub>ℓ</sub> = P ⁄ v&nbsp;&nbsp;&nbsp;<small>[ J/mm ] — energy delivered per millimetre of seam</small></div>
+  <p class="lead">Line energy governs <strong>penetration depth and HAZ size</strong>. More power or slower travel ⇒ more energy per millimetre ⇒ deeper weld and a larger heat-affected zone. It is the first knob to reach for.</p>
+
+  <h3>Power density — sets the regime</h3>
+  <div class="eq">I = P ⁄ (π (d/2)²)&nbsp;&nbsp;&nbsp;<small>[ W/cm² ] — decides conduction vs. keyhole</small></div>
+  <p class="lead">You raise I by adding power or by tightening the focus (smaller spot, achieved with better beam quality M² or a shorter focal length). Two welds with identical line energy can look completely different if one is focused tightly into keyhole and the other is defocused into conduction.</p>
+
+  <h3>Interaction time</h3>
+  <div class="eq">t<sub>i</sub> = d ⁄ v&nbsp;&nbsp;&nbsp;<small>[ s ] — how long any point sees the beam</small></div>
+
+  <h3>Penetration scaling (keyhole, simplified)</h3>
+  <div class="eq">D ∝ (A · P) ⁄ (v · d · ρ · h<sub>m</sub>)&nbsp;&nbsp;&nbsp;<small>h<sub>m</sub> = c<sub>p</sub>(T<sub>m</sub> − T₀) + L<sub>f</sub> (melting enthalpy)</small></div>
+  <p class="lead">Deeper with more absorbed power, slower travel, and tighter focus; shallower for reflective, high-melting, or high-conductivity metals. This is exactly the relation the simulator integrates.</p>
+
+  <div class="note">
+    <div class="t">The melting-efficiency trade-off</div>
+    <p>Only a fraction of the incident energy ends up as melt enthalpy — the rest is lost to conduction into the bulk, reflection, and the vapour plume. Melting efficiency peaks at <em>intermediate</em> speeds: too slow and heat leaks away by conduction; too fast and the beam couples poorly. The practical sweet spot is "as fast as you can while still reaching the required penetration."</p>
+  </div>
+
+  <table class="tbl">
+    <tr><th>If you…</th><th>Penetration</th><th>HAZ / distortion</th><th>Watch out for</th></tr>
+    <tr><td>↑ Power</td><td class="num">↑</td><td class="num">↑</td><td>burn-through on thin parts</td></tr>
+    <tr><td>↑ Speed</td><td class="num">↓</td><td class="num">↓</td><td>humping, undercut, lack of fusion</td></tr>
+    <tr><td>↓ Spot size (tighter focus)</td><td class="num">↑</td><td class="num">~</td><td>tips into keyhole → spatter/porosity</td></tr>
+    <tr><td>Defocus the beam</td><td class="num">↓</td><td class="num">↑ width</td><td>drops below keyhole threshold</td></tr>
+  </table>
+</div></section>
+
+<!-- =================== SOURCES =================== -->
+<section id="sources"><div class="wrap">
+  <div class="sec-no">06 — Laser sources</div>
+  <h2>Which laser does the welding</h2>
+  <p class="lead">The source sets wavelength (hence absorption), beam quality (hence achievable spot), and delivery. Today the field is overwhelmingly near-1 µm solid-state.</p>
+  <table class="tbl">
+    <tr><th>Source</th><th>Wavelength</th><th>Strengths</th><th>Typical use</th></tr>
+    <tr><td><strong>Fiber (Yb)</strong></td><td class="num">1.07 µm</td><td>High wall-plug efficiency, excellent M², fiber delivery</td><td>Dominant for metals — automotive, general</td></tr>
+    <tr><td><strong>Disk (Yb:YAG)</strong></td><td class="num">1.03 µm</td><td>Very high power, good beam quality, beam shaping</td><td>High-power keyhole, remote welding</td></tr>
+    <tr><td><strong>Nd:YAG</strong></td><td class="num">1.064 µm</td><td>Flexible, pulsed or CW, legacy installed base</td><td>Spot/seam welding, repair</td></tr>
+    <tr><td><strong>CO₂</strong></td><td class="num">10.6 µm</td><td>Cheap high power; but mirror delivery &amp; poor metal coupling</td><td>Thick section, non-metals (declining)</td></tr>
+    <tr><td><strong>Diode (direct)</strong></td><td class="num">0.9–1.0 µm</td><td>Compact, efficient, lower brightness</td><td>Conduction welding, brazing, cladding</td></tr>
+    <tr><td><strong>Green / Blue</strong></td><td class="num">515 / 450 nm</td><td>High absorptivity in Cu &amp; Au — stable, low-spatter</td><td>EV battery copper, electronics</td></tr>
+  </table>
+  <div class="note">
+    <div class="t">Why colour matters for copper</div>
+    <p>Copper reflects ~95% of 1 µm light when cold, so infrared welding is unstable — it sputters until the keyhole randomly ignites. At 450 nm copper absorbs several times more, giving a calm, repeatable melt. The rise of EV batteries (thousands of copper tab welds per pack) is the main reason blue and green high-power lasers became a serious product class.</p>
+  </div>
+</div></section>
+
+<!-- =================== DEFECTS =================== -->
+<section id="defects"><div class="wrap">
+  <div class="sec-no">07 — Defects &amp; quality</div>
+  <h2>What goes wrong, and why</h2>
+  <ul class="clean">
+    <li><strong>Porosity.</strong> The keyhole is dynamic; if it collapses it traps vapour as a void. Hydrogen porosity plagues aluminium. Mitigation: stable parameters, beam oscillation/wobble, reduced-pressure or vacuum welding.</li>
+    <li><strong>Spatter.</strong> Melt ejected by keyhole pressure fluctuations. Worse at high speed and in reflective metals; beam shaping and ramping help.</li>
+    <li><strong>Hot (solidification) cracking.</strong> Depends on alloy composition and joint restraint; some alloys are simply crack-sensitive.</li>
+    <li><strong>Lack of fusion / penetration.</strong> Too little power density or line energy, or poor joint fit-up — the laser is unforgiving of gaps.</li>
+    <li><strong>Humping &amp; undercut.</strong> High-speed instabilities in the melt track.</li>
+  </ul>
+  <p class="lead">Modern lines monitor welds in real time with photodiodes, high-speed cameras, acoustic sensors, and <strong>optical coherence tomography (OCT)</strong>, which measures keyhole depth live — closing the loop on penetration control.</p>
+</div></section>
+
+<!-- =================== APPLICATIONS =================== -->
+<section id="applications"><div class="wrap">
+  <div class="sec-no">08 — Applications</div>
+  <h2>Where laser welding earns its keep</h2>
+  <div class="apps">
+    <div class="app"><div class="ic">Automotive</div><h4>Bodies &amp; powertrain</h4><p>Tailor-welded blanks, body-in-white seams, transmission gears, and galvo "remote" welding at high throughput.</p></div>
+    <div class="app"><div class="ic">E-mobility</div><h4>Battery &amp; motors</h4><p>Cell-to-busbar and tab joints, copper–aluminium connections (green/blue lasers), and hairpin stator welding for EV drives.</p></div>
+    <div class="app"><div class="ic">Aerospace</div><h4>Engines &amp; structures</h4><p>Turbine and combustor components, structural joints, and hybrid laser-arc welding for thick, gap-tolerant sections.</p></div>
+    <div class="app"><div class="ic">Medical</div><h4>Implants &amp; devices</h4><p>Hermetic sealing of pacemakers and sensors, fine surgical-instrument welds, biocompatible titanium joining.</p></div>
+    <div class="app"><div class="ic">Electronics</div><h4>Micro-welding</h4><p>Sensor packaging, connector and lead-frame welds, and precise low-heat joints next to sensitive components.</p></div>
+    <div class="app"><div class="ic">Heavy industry</div><h4>Shipbuilding &amp; pipe</h4><p>Hybrid laser-arc welding of thick plate — keyhole depth plus arc gap-bridging — for fast, low-distortion seams.</p></div>
+  </div>
+</div></section>
+
+<!-- =================== TAKEAWAYS =================== -->
+<section id="takeaways"><div class="wrap">
+  <div class="sec-no">09 — Key takeaways</div>
+  <h2>The five things to remember</h2>
+  <div class="takeaways">
+    <div class="tk"><div class="n">1</div><p><strong>Power density rules.</strong> Whether you melt or vaporise — conduction or keyhole — is decided by watts per cm², set by power and focus.</p></div>
+    <div class="tk"><div class="n">2</div><p><strong>Two regimes, two shapes.</strong> Conduction = shallow dish, low spatter. Keyhole = deep narrow finger, high efficiency, harder to control.</p></div>
+    <div class="tk"><div class="n">3</div><p><strong>Line energy (P/v)</strong> is your master dial for penetration and HAZ; speed and power trade off against each other.</p></div>
+    <div class="tk"><div class="n">4</div><p><strong>Absorptivity is fickle.</strong> Wavelength and the keyhole's multiple reflections can swing coupling from 5% to 90% — copper at IR is the cautionary tale.</p></div>
+    <div class="tk"><div class="n">5</div><p><strong>Fiber/disk near 1 µm dominate</strong>, with green/blue rising for copper. Match the colour to the metal.</p></div>
+  </div>
+</div></section>
+
+<!-- =================== REFERENCES =================== -->
+<section><div class="wrap">
+  <div class="sec-no">— Further reading</div>
+  <h2>Standard references</h2>
+  <ul class="refs">
+    <li>Steen, W. &amp; Mazumder, J. — <em>Laser Material Processing</em> (Springer). The canonical textbook; chapters on welding theory and practice.</li>
+    <li>Ready, J. (ed.) — <em>LIA Handbook of Laser Materials Processing</em>. Practical, industry-oriented reference.</li>
+    <li>Dowden, J. (ed.) — <em>The Theory of Laser Materials Processing</em> (Springer). Deeper modelling of keyhole and heat flow.</li>
+    <li>Hügel, H. &amp; Graf, T. — <em>Laser in der Fertigung</em>. Strong on beam sources and process physics.</li>
+    <li>Duley, W. — <em>Laser Welding</em> (Wiley). Focused single-topic treatment.</li>
+  </ul>
+</div></section>
+
+<footer><div class="wrap">
+  <p>Interactive lecture notes · laser beam welding · simplified physics model for teaching — trends are faithful, absolute numbers are indicative.</p>
+</div></footer>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- material properties (approximate, room-T) ----------
+  const MAT = {
+    steel:     {name:"Mild Steel",     rho:7850, cp:600, Tm:1500, Lf:2.7e5,  aBase:0.35, aKey:0.85, Ithr:1.0e6, col:"#9aa3ad"},
+    stainless: {name:"Stainless 304",  rho:8000, cp:550, Tm:1450, Lf:2.6e5,  aBase:0.37, aKey:0.85, Ithr:1.0e6, col:"#b6bcc4"},
+    aluminum:  {name:"Aluminium 6061", rho:2700, cp:900, Tm:650,  Lf:3.97e5, aBase:0.08, aKey:0.65, Ithr:1.5e6, col:"#cfd2d7"},
+    titanium:  {name:"Ti-6Al-4V",      rho:4430, cp:560, Tm:1660, Lf:2.86e5, aBase:0.42, aKey:0.80, Ithr:1.2e6, col:"#9aa3af"},
+    copper:    {name:"Copper",         rho:8960, cp:385, Tm:1085, Lf:2.05e5, aBase:0.05, aKey:0.60, Ithr:2.0e6, col:"#c08457"}
+  };
+  const T0 = 25;
+
+  // ---------- helpers ----------
+  const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+  const lerp=(a,b,t)=>a+(b-a)*t;
+  const smooth=t=>t*t*(3-2*t);
+  function fmtSci(x){
+    if(!isFinite(x)||x<=0) return "0";
+    const e=Math.floor(Math.log10(x));
+    const m=x/Math.pow(10,e);
+    return m.toFixed(1)+"×10"+sup(e);
+  }
+  function sup(n){
+    const map={"-":"⁻","0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹"};
+    return String(n).split("").map(c=>map[c]||c).join("");
+  }
+
+  // ---------- DOM ----------
+  const $=id=>document.getElementById(id);
+  const els={
+    p:$("p"), v:$("v"), d:$("d"), mat:$("mat"),
+    pVal:$("pVal"), vVal:$("vVal"), dVal:$("dVal"), matVal:$("matVal"),
+    badge:$("modeBadge"),
+    roI:$("roI"), roEl:$("roEl"), roA:$("roA"), roT:$("roT"),
+    roD:$("roD"), roW:$("roW"), roAR:$("roAR"), roMode:$("roMode"), roModeU:$("roModeU"),
+    tip:$("tip"), xsNote:$("xsNote"), topNote:$("topNote"),
+    xs:$("xsSvg"), top:$("topSvg"), map:$("mapSvg")
+  };
+
+  // ---------- physics ----------
+  function compute(){
+    const P=+els.p.value, v=+els.v.value, dUm=+els.d.value, m=MAT[els.mat.value];
+    const dCm=dUm*1e-4;                       // µm -> cm
+    const Aspot=Math.PI*Math.pow(dCm/2,2);    // cm²
+    const I=P/Aspot;                           // W/cm²
+    // regime transition (log-scale, centred near threshold)
+    const tt=smooth(clamp((Math.log10(I)-Math.log10(m.Ithr)+0.5)/1.0,0,1));
+    const A=lerp(m.aBase,m.aKey,tt);           // effective absorptivity
+    const hm=m.cp*(m.Tm-T0)+m.Lf;              // J/kg
+    const rho_hm=m.rho*hm;                      // J/m³
+    const v_ms=v/1000;                          // m/s
+    const El=A*P/v_ms;                           // J/m absorbed
+    const Aweld=El/rho_hm;                        // m²
+    const Aweld_mm2=Aweld*1e6;
+    const AR=lerp(0.5,8.0,tt);                    // depth/width
+    let depth=Math.sqrt(Math.max(Aweld_mm2,0)*AR);
+    let width=Math.sqrt(Math.max(Aweld_mm2,1e-6)/AR);
+    width=Math.max(width,dUm/1000);               // can't be narrower than spot
+    const tI=(dUm/1000)/v*1000;                   // ms
+    const mode = tt<0.34?"Conduction": tt>0.66?"Keyhole":"Transition";
+    return {P,v,dUm,m,I,tt,A,El:El/1000,depth,width,AR,tI,mode};
+  }
+
+  // ---------- cross-section drawing ----------
+  const XS={x0:20,x1:400,surf:70,bot:320,cx:210,scale:34}; // px/mm
+  function drawXS(s){
+    const g=[];
+    const fullPen = s.depth*XS.scale > (XS.bot-XS.surf);
+    const depthPx = Math.min(s.depth*XS.scale, XS.bot-XS.surf);
+    const wPx = s.width*XS.scale;
+    const tt=s.tt;
+
+    // defs (gradients)
+    g.push(`<defs>
+      <linearGradient id="meltG" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#fff6e0"/><stop offset="14%" stop-color="#ffd47a"/>
+        <stop offset="38%" stop-color="#ff9a3c"/><stop offset="64%" stop-color="#ff5a2c"/>
+        <stop offset="100%" stop-color="#7a1f12"/>
+      </linearGradient>
+      <linearGradient id="beamG" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="rgba(43,212,232,0)"/>
+        <stop offset="100%" stop-color="rgba(43,212,232,.5)"/>
+      </linearGradient>
+      <radialGradient id="plumeG"><stop offset="0%" stop-color="rgba(255,210,150,.6)"/>
+        <stop offset="100%" stop-color="rgba(255,150,90,0)"/></radialGradient>
+    </defs>`);
+
+    // metal block
+    g.push(`<rect x="${XS.x0}" y="${XS.surf}" width="${XS.x1-XS.x0}" height="${XS.bot-XS.surf}"
+      fill="${s.m.col}" opacity="0.16"/>`);
+    g.push(`<line x1="${XS.x0}" y1="${XS.surf}" x2="${XS.x1}" y2="${XS.surf}" stroke="${s.m.col}" stroke-width="2" opacity="0.7"/>`);
+    // mm grid
+    for(let mm=1; mm<=7; mm++){
+      const y=XS.surf+mm*XS.scale; if(y>XS.bot) break;
+      g.push(`<line x1="${XS.x0}" y1="${y}" x2="${XS.x1}" y2="${y}" stroke="#1b2531" stroke-width="1"/>`);
+      g.push(`<text x="${XS.x0-2}" y="${y+3}" text-anchor="end" font-family="monospace" font-size="9" fill="#4a5666">${mm}</text>`);
+    }
+
+    // shape function
+    function halfShape(yf){
+      const expo=lerp(0.55,0.16,tt);
+      let base=Math.pow(Math.max(1-yf,0),expo);
+      const bonus=tt*0.4*Math.exp(-Math.pow(yf/0.16,2)); // nail head
+      return base+bonus;
+    }
+    function buildPath(scaleW){
+      const N=46; let L="",R="";
+      for(let i=0;i<=N;i++){
+        const yf=i/N, y=XS.surf+yf*depthPx;
+        const hw=halfShape(yf)*(wPx/2)*scaleW;
+        L+=(i===0?"M":"L")+` ${(XS.cx-hw).toFixed(1)},${y.toFixed(1)} `;
+      }
+      for(let i=N;i>=0;i--){
+        const yf=i/N, y=XS.surf+yf*depthPx;
+        const hw=halfShape(yf)*(wPx/2)*scaleW;
+        R+=`L ${(XS.cx+hw).toFixed(1)},${y.toFixed(1)} `;
+      }
+      return L+R+"Z";
+    }
+
+    // HAZ halo
+    g.push(`<path d="${buildPath(1.55)}" fill="rgba(255,90,40,0.10)"/>`);
+    // weld pool
+    g.push(`<path d="${buildPath(1.0)}" fill="url(#meltG)" stroke="#ffb066" stroke-width="0.8" opacity="0.96"/>`);
+
+    // keyhole capillary
+    if(tt>0.45){
+      const kd=depthPx*0.95;
+      g.push(`<line x1="${XS.cx}" y1="${XS.surf+2}" x2="${XS.cx}" y2="${XS.surf+kd}"
+        stroke="#fff" stroke-width="${1.5+1.5*tt}" opacity="${0.35+0.5*tt}" stroke-linecap="round"/>`);
+    }
+
+    // beam cone + spot above surface
+    const spotPx=Math.max((s.dUm/1000)*XS.scale/2, 2.5);
+    g.push(`<polygon points="${XS.cx-9},2 ${XS.cx+9},2 ${XS.cx+spotPx},${XS.surf} ${XS.cx-spotPx},${XS.surf}"
+      fill="url(#beamG)"/>`);
+    g.push(`<line x1="${XS.cx}" y1="2" x2="${XS.cx}" y2="${XS.surf}" stroke="${'#2bd4e8'}" stroke-width="1.2" opacity="0.6"/>`);
+    // vapour plume for keyhole
+    if(tt>0.5){
+      g.push(`<ellipse cx="${XS.cx}" cy="${XS.surf-10}" rx="${10*tt}" ry="${16*tt}" fill="url(#plumeG)" opacity="${tt}"/>`);
+    }
+    g.push(`<ellipse cx="${XS.cx}" cy="${XS.surf}" rx="${spotPx}" ry="2.4" fill="#eaffff"/>`);
+
+    // dimension: depth
+    const dimX=XS.cx+wPx/2*(1+0.55*tt)+26;
+    g.push(`<line x1="${dimX}" y1="${XS.surf}" x2="${dimX}" y2="${XS.surf+depthPx}" stroke="#56cc8a" stroke-width="1" stroke-dasharray="3 2"/>`);
+    g.push(`<path d="M ${dimX-3},${XS.surf+4} L ${dimX},${XS.surf} L ${dimX+3},${XS.surf+4}" fill="none" stroke="#56cc8a" stroke-width="1"/>`);
+    g.push(`<path d="M ${dimX-3},${XS.surf+depthPx-4} L ${dimX},${XS.surf+depthPx} L ${dimX+3},${XS.surf+depthPx-4}" fill="none" stroke="#56cc8a" stroke-width="1"/>`);
+    g.push(`<text x="${dimX+6}" y="${XS.surf+depthPx/2}" font-family="monospace" font-size="11" fill="#56cc8a">D=${s.depth.toFixed(2)}${fullPen?"+":""}mm</text>`);
+
+    // dimension: width
+    const wy=XS.surf-16;
+    g.push(`<line x1="${XS.cx-wPx/2}" y1="${wy}" x2="${XS.cx+wPx/2}" y2="${wy}" stroke="#2bd4e8" stroke-width="1" stroke-dasharray="3 2"/>`);
+    g.push(`<text x="${XS.cx}" y="${wy-5}" text-anchor="middle" font-family="monospace" font-size="11" fill="#2bd4e8">W=${s.width.toFixed(2)} mm</text>`);
+
+    if(fullPen){
+      g.push(`<text x="${XS.cx}" y="${XS.bot-6}" text-anchor="middle" font-family="monospace" font-size="11" fill="#ff7a5a">↓ full penetration / cut-through</text>`);
+    }
+    els.xs.innerHTML=g.join("");
+    els.xsNote.textContent = "depth/width ≈ "+s.AR.toFixed(1);
+  }
+
+  // ---------- top view (animated) ----------
+  const TOP={x0:20,x1:400,seam:90};
+  let beamX=160, lastGeom=null, rafId=null;
+  function topGeom(s){
+    const wPx=clamp(s.width*XS.scale,6,70);
+    const bh=Math.max(wPx/2,4);                     // bead half-height
+    const tl=bh*(1.4+ s.v/14);                       // tail length grows with speed
+    const spot=Math.max((s.dUm/1000)*XS.scale/2,3);
+    return {bh,tl,spot};
+  }
+  function drawTopStatic(s){
+    const g=[];
+    g.push(`<defs>
+      <radialGradient id="poolG"><stop offset="0%" stop-color="#fff3da"/>
+        <stop offset="35%" stop-color="#ffb257"/><stop offset="70%" stop-color="#ff5e2b"/>
+        <stop offset="100%" stop-color="#9a2a16"/></radialGradient>
+      <linearGradient id="beadG" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="#3a4654"/><stop offset="100%" stop-color="#566576"/></linearGradient>
+      <clipPath id="beadClip"><rect id="beadClipRect" x="${TOP.x0}" y="${TOP.seam-9}" width="0" height="18"/></clipPath>
+    </defs>`);
+    // plate
+    g.push(`<rect x="${TOP.x0}" y="20" width="${TOP.x1-TOP.x0}" height="130" fill="${s.m.col}" opacity="0.12"/>`);
+    // solidified bead band (clipped, grows during animation)
+    const bh=lastGeom.bh;
+    g.push(`<g clip-path="url(#beadClip)">
+      <rect x="${TOP.x0}" y="${TOP.seam-bh}" width="${TOP.x1-TOP.x0}" height="${bh*2}" fill="url(#beadG)"/>`);
+    // ripple chevrons across the band
+    for(let x=TOP.x0+6; x<TOP.x1; x+=9){
+      g.push(`<path d="M ${x},${TOP.seam-bh} Q ${x-4},${TOP.seam} ${x},${TOP.seam+bh}" fill="none" stroke="#2a3542" stroke-width="1"/>`);
+    }
+    g.push(`</g>`);
+    // travel arrow
+    g.push(`<text x="${TOP.x1-4}" y="34" text-anchor="end" font-family="monospace" font-size="10" fill="#8b97a6">weld travel →</text>`);
+    // moving group placeholder
+    g.push(`<g id="poolGrp"></g>`);
+    els.top.innerHTML=g.join("");
+  }
+  function drawPool(){
+    if(!lastGeom) return;
+    const {bh,tl,spot}=lastGeom;
+    const pool=`M ${0.7*bh},0
+      C ${0.7*bh},${-1.05*bh} ${-0.1*bh},${-bh} ${-0.45*tl},${-0.55*bh}
+      C ${-0.78*tl},${-0.18*bh} ${-tl},${-0.05*bh} ${-tl},0
+      C ${-tl},${0.05*bh} ${-0.78*tl},${0.18*bh} ${-0.45*tl},${0.55*bh}
+      C ${-0.1*bh},${bh} ${0.7*bh},${1.05*bh} ${0.7*bh},0 Z`;
+    const grp=els.top.querySelector("#poolGrp");
+    if(grp){
+      grp.setAttribute("transform",`translate(${beamX.toFixed(1)},${TOP.seam})`);
+      grp.innerHTML=`
+        <path d="${pool}" fill="url(#poolG)" stroke="#ffd9a0" stroke-width="0.6" opacity="0.95"/>
+        <circle cx="0" cy="0" r="${spot+3}" fill="#2bd4e8" opacity="0.18"/>
+        <circle cx="0" cy="0" r="${spot}" fill="#eaffff"/>`;
+    }
+    const clip=els.top.querySelector("#beadClipRect");
+    if(clip) clip.setAttribute("width", Math.max(0,beamX-TOP.x0).toFixed(1));
+  }
+  function animate(){
+    beamX+=1.1;
+    if(beamX>TOP.x1+lastGeom.tl){ beamX=TOP.x0+lastGeom.tl*0.4+10; }
+    drawPool();
+    rafId=requestAnimationFrame(animate);
+  }
+
+  // ---------- process map ----------
+  function drawMap(s){
+    const W=420,x0=22,x1=406, y=34, h=18;
+    const X=lg=>x0+(clamp(lg,3,8)-3)/5*(x1-x0);
+    const g=[];
+    // zones
+    const zones=[[3,4,"#3a3f48","heating"],[4,6,"#1f6f7a","conduction"],[6,8,"#a13a1c","keyhole"]];
+    zones.forEach(z=>{
+      g.push(`<rect x="${X(z[0])}" y="${y}" width="${X(z[1])-X(z[0])}" height="${h}" fill="${z[2]}" opacity="0.5"/>`);
+      g.push(`<text x="${(X(z[0])+X(z[1]))/2}" y="${y+h+13}" text-anchor="middle" font-family="monospace" font-size="9" fill="#7d8a99">${z[3]}</text>`);
+    });
+    g.push(`<rect x="${x0}" y="${y}" width="${x1-x0}" height="${h}" fill="none" stroke="#2a3848" stroke-width="1"/>`);
+    // decade ticks
+    for(let e=3;e<=8;e++){
+      g.push(`<line x1="${X(e)}" y1="${y-4}" x2="${X(e)}" y2="${y}" stroke="#46535f" stroke-width="1"/>`);
+      g.push(`<text x="${X(e)}" y="${y-7}" text-anchor="middle" font-family="monospace" font-size="9" fill="#5f6c7c">10${sup(e)}</text>`);
+    }
+    // material threshold marker
+    const xthr=X(Math.log10(s.m.Ithr));
+    g.push(`<line x1="${xthr}" y1="${y-2}" x2="${xthr}" y2="${y+h+2}" stroke="#f4c04a" stroke-width="1.2" stroke-dasharray="3 2"/>`);
+    // current marker
+    const xc=X(Math.log10(s.I));
+    g.push(`<path d="M ${xc-6},${y-6} L ${xc+6},${y-6} L ${xc},${y+1} Z" fill="#2bd4e8"/>`);
+    g.push(`<line x1="${xc}" y1="${y}" x2="${xc}" y2="${y+h}" stroke="#2bd4e8" stroke-width="2"/>`);
+    g.push(`<text x="${clamp(xc,x0+30,x1-30)}" y="${y+h+13}" text-anchor="middle" font-family="monospace" font-size="9" fill="#2bd4e8">you: ${fmtSci(s.I)}</text>`);
+    els.map.innerHTML=g.join("");
+  }
+
+  // ---------- tip text ----------
+  function tipFor(s){
+    const mk=els.mat.value;
+    if(s.depth*XS.scale > (XS.bot-XS.surf))
+      return `<b>Beyond welding.</b> Energy is so high the beam fully penetrates and starts cutting/burning through. Raise speed or drop power.`;
+    if(mk==="copper" && s.tt<0.5)
+      return `<b>Copper barely couples to 1 µm light</b> (absorptivity ~${(s.A*100).toFixed(0)}%). The weld is weak and unstable — exactly why green (515 nm) and blue (450 nm) lasers are used for EV-battery copper welding.`;
+    if(mk==="aluminum" && s.tt<0.4)
+      return `<b>Aluminium is highly reflective</b> in the infrared, so you need more power density to ignite a stable keyhole. Watch for hydrogen porosity once you do.`;
+    if(s.tt>0.66 && s.v>120)
+      return `<b>Fast keyhole regime.</b> Deep and efficient, but high-speed keyholes are prone to spatter and porosity — beam wobble or oscillation helps stabilise them.`;
+    if(s.tt>0.66)
+      return `<b>Keyhole mode.</b> A vapour capillary traps the light (absorptivity ~${(s.A*100).toFixed(0)}%), giving a deep, narrow weld at aspect ratio ${s.AR.toFixed(1)}. Great for thick sections.`;
+    if(s.tt<0.34)
+      return `<b>Conduction mode.</b> A smooth, shallow dish — low spatter and a clean bead, ideal for thin sheet, hermetic seals, and cosmetic joints. Coupling is limited to the bare metal's ${(s.A*100).toFixed(0)}% absorptivity.`;
+    return `<b>Transition zone.</b> You're near the keyhole threshold (${fmtSci(s.m.Ithr)} W/cm² for this metal). Small changes in focus or power now flip the weld between shallow and deep — an unstable place to operate.`;
+  }
+
+  // ---------- mode badge styling ----------
+  function styleBadge(s){
+    let c,bg,label;
+    if(s.tt<0.34){c="#f4a52a";bg="rgba(244,165,42,.14)";label="CONDUCTION MODE";}
+    else if(s.tt>0.66){c="#ff5e2b";bg="rgba(255,94,43,.16)";label="KEYHOLE MODE";}
+    else{c="#f4c04a";bg="rgba(244,192,74,.14)";label="TRANSITION";}
+    els.badge.textContent=label; els.badge.style.color=c; els.badge.style.background=bg; els.badge.style.borderColor=c;
+  }
+
+  // ---------- main render ----------
+  function render(){
+    const s=compute();
+    els.pVal.textContent=s.P; els.vVal.textContent=s.v; els.dVal.textContent=s.dUm;
+    els.matVal.textContent=s.m.name;
+
+    drawXS(s);
+    lastGeom=topGeom(s);
+    drawTopStatic(s);
+    drawPool();
+    drawMap(s);
+
+    els.roI.textContent=fmtSci(s.I);
+    els.roEl.textContent=s.El.toFixed(s.El<10?2:s.El<100?1:0);
+    els.roA.textContent=(s.A*100).toFixed(0)+"%";
+    els.roT.textContent=s.tI.toFixed(s.tI<1?2:1);
+    els.roD.textContent=s.depth.toFixed(2);
+    els.roW.textContent=s.width.toFixed(2);
+    els.roAR.textContent=s.AR.toFixed(1);
+    els.roMode.textContent=s.mode;
+    els.roModeU.textContent = s.tt<0.34?"melt by conduction": s.tt>0.66?"vapour capillary":"near threshold";
+
+    styleBadge(s);
+    els.tip.innerHTML=tipFor(s);
+    els.topNote.textContent = "tail ∝ speed";
+  }
+
+  // ---------- events ----------
+  ["p","v","d"].forEach(id=>els[id].addEventListener("input",render));
+  els.mat.addEventListener("change",render);
+  document.querySelectorAll(".presets button").forEach(b=>{
+    b.addEventListener("click",()=>{
+      els.p.value=b.dataset.p; els.v.value=b.dataset.v; els.d.value=b.dataset.d; els.mat.value=b.dataset.m;
+      render();
+    });
+  });
+
+  // ---------- go ----------
+  render();
+  if(!window.matchMedia || !window.matchMedia("(prefers-reduced-motion: reduce)").matches){
+    animate();
+  } else { drawPool(); }
+})();
+</script>
+</body>
+</html>

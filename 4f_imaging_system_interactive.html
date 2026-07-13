@@ -1,0 +1,530 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans);font-size:13px;color:var(--color-text-primary)}
+h2.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+.app{display:flex;gap:12px;padding:8px 0;min-height:560px}
+.sidebar{width:220px;flex-shrink:0;display:flex;flex-direction:column;gap:8px}
+.main{flex:1;display:flex;flex-direction:column;gap:8px;min-width:0}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:10px 12px}
+.card-title{font-size:11px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.row4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px}
+.panel{position:relative;display:flex;flex-direction:column;align-items:center}
+.panel canvas{border-radius:4px;width:100%;display:block;image-rendering:pixelated}
+.plabel{font-size:10px;color:var(--color-text-secondary);margin-top:3px;text-align:center;white-space:nowrap}
+.ctrl{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.ctrl label{font-size:11px;color:var(--color-text-secondary);min-width:68px;flex-shrink:0}
+.ctrl input[type=range]{flex:1;min-width:0}
+.ctrl .val{font-size:11px;font-weight:500;min-width:34px;text-align:right;color:var(--color-text-primary)}
+select{font-size:11px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);color:var(--color-text-primary);border-radius:4px;padding:3px 6px;width:100%;margin-bottom:6px}
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:2px 7px;border-radius:12px;font-weight:500}
+.badge-ok{background:var(--color-background-success);color:var(--color-text-success)}
+.badge-warn{background:var(--color-background-warning);color:var(--color-text-warning)}
+.badge-bad{background:var(--color-background-danger);color:var(--color-text-danger)}
+.stats{display:flex;flex-direction:column;gap:4px}
+.stat{display:flex;justify-content:space-between;align-items:center;font-size:11px}
+.stat-val{font-weight:500;font-size:12px}
+.tab-bar{display:flex;gap:4px;margin-bottom:6px}
+.tab{font-size:10px;padding:3px 8px;border-radius:4px;border:0.5px solid var(--color-border-secondary);cursor:pointer;background:transparent;color:var(--color-text-secondary)}
+.tab.active{background:var(--color-background-secondary);color:var(--color-text-primary);font-weight:500}
+.mtf-wrap{position:relative;height:70px}
+#mtfCanvas{width:100%;height:70px;border-radius:4px}
+.sep{height:0.5px;background:var(--color-border-tertiary);margin:4px 0}
+</style>
+
+<h2 class="sr-only">Interactive 4f imaging system simulator with live FFT propagation</h2>
+
+<div class="app">
+<div class="sidebar">
+  <div class="card">
+    <div class="card-title">Object</div>
+    <select id="objSel">
+      <option value="usaf">USAF pattern</option>
+      <option value="siemens">Siemens star</option>
+      <option value="bars">Resolution bars</option>
+      <option value="cross">Cross</option>
+      <option value="twin_slit">Twin slit</option>
+      <option value="circle">Filled circle</option>
+      <option value="point">Point source</option>
+    </select>
+    <div class="card-title" style="margin-top:4px">Lens Parameters</div>
+    <div class="ctrl"><label>f₁ (mm)</label><input type="range" id="f1" min="50" max="400" step="10" value="100"><span class="val" id="f1v">100</span></div>
+    <div class="ctrl"><label>f₂ (mm)</label><input type="range" id="f2" min="50" max="400" step="10" value="100"><span class="val" id="f2v">100</span></div>
+    <div class="ctrl"><label>λ (nm)</label><input type="range" id="wl" min="400" max="850" step="10" value="532"><span class="val" id="wlv">532</span></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Pupil / Filter</div>
+    <select id="pupSel">
+      <option value="circ">Circular aperture</option>
+      <option value="annular">Annular</option>
+      <option value="gaussian">Gaussian</option>
+      <option value="open">Open (no filter)</option>
+      <option value="slit">Slit</option>
+      <option value="vortex">Vortex (l=1)</option>
+    </select>
+    <div class="ctrl"><label>Radius</label><input type="range" id="pr" min="10" max="100" step="2" value="50"><span class="val" id="prv">0.50</span></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Aberrations (waves)</div>
+    <div class="ctrl"><label>Defocus</label><input type="range" id="a0" min="-3" max="3" step="0.1" value="0"><span class="val" id="a0v">0.0</span></div>
+    <div class="ctrl"><label>Astig 45°</label><input type="range" id="a1" min="-2" max="2" step="0.1" value="0"><span class="val" id="a1v">0.0</span></div>
+    <div class="ctrl"><label>Coma X</label><input type="range" id="a2" min="-2" max="2" step="0.1" value="0"><span class="val" id="a2v">0.0</span></div>
+    <div class="ctrl"><label>Spherical</label><input type="range" id="a3" min="-2" max="2" step="0.1" value="0"><span class="val" id="a3v">0.0</span></div>
+    <div class="ctrl"><label>Trefoil</label><input type="range" id="a4" min="-2" max="2" step="0.1" value="0"><span class="val" id="a4v">0.0</span></div>
+    <button onclick="resetAbers()" style="width:100%;font-size:11px;padding:4px;margin-top:2px">Reset aberrations</button>
+  </div>
+  <div class="card stats">
+    <div class="card-title">System Metrics</div>
+    <div class="stat"><span>Magnification</span><span class="stat-val" id="magV">−1.00×</span></div>
+    <div class="stat"><span>RMS WFE</span><span class="stat-val" id="rmsV">0.000 λ</span></div>
+    <div class="stat"><span>Strehl ratio</span><span class="stat-val" id="strV">1.000</span></div>
+    <div class="stat" style="margin-top:4px"><span>Diffraction limit</span><span id="dlBadge" class="badge badge-ok">YES ✓</span></div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="card">
+    <div class="card-title">Optical Planes — live propagation</div>
+    <div class="row4">
+      <div class="panel"><canvas id="cObj" width="128" height="128"></canvas><div class="plabel">Object amplitude</div></div>
+      <div class="panel"><canvas id="cFamp" width="128" height="128"></canvas><div class="plabel">Fourier |U| log</div></div>
+      <div class="panel"><canvas id="cPup" width="128" height="128"></canvas><div class="plabel">Pupil amplitude</div></div>
+      <div class="panel"><canvas id="cImg" width="128" height="128"></canvas><div class="plabel">Image intensity</div></div>
+    </div>
+  </div>
+  <div class="row" style="min-height:0">
+    <div class="card">
+      <div class="card-title">Wavefront OPD</div>
+      <canvas id="cWF" width="128" height="128" style="width:100%;border-radius:4px;image-rendering:pixelated"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-title">PSF (centre)</div>
+      <canvas id="cPSF" width="128" height="128" style="width:100%;border-radius:4px;image-rendering:pixelated"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-title">MTF (2D centre)</div>
+      <canvas id="cMTF" width="128" height="128" style="width:100%;border-radius:4px;image-rendering:pixelated"></canvas>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Radial MTF & Intensity Profiles</div>
+    <canvas id="cPlot" width="600" height="90" style="width:100%;border-radius:4px"></canvas>
+  </div>
+  <div class="card" style="padding:8px 12px">
+    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+      <span style="font-size:11px;color:var(--color-text-secondary)">Colormap:</span>
+      <label style="font-size:11px;display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="cm" value="hot" checked onchange="setCmap(this.value)"> Hot</label>
+      <label style="font-size:11px;display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="cm" value="glow" onchange="setCmap(this.value)"> Glow</label>
+      <label style="font-size:11px;display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="cm" value="gray" onchange="setCmap(this.value)"> Grayscale</label>
+      <label style="font-size:11px;display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="cm" value="phase" onchange="setCmap(this.value)"> Phase</label>
+      <div style="margin-left:auto;display:flex;gap:8px">
+        <button onclick="sendPrompt('Explain what the Fourier plane shows in a 4f system')" style="font-size:11px;padding:3px 10px">What is the Fourier plane? ↗</button>
+        <button onclick="sendPrompt('What Zernike aberrations are most critical in microscopy?')" style="font-size:11px;padding:3px 10px">Aberrations in microscopy ↗</button>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+const N=128;
+let cmap='hot';
+function setCmap(v){cmap=v;render();}
+
+// ── FFT (Cooley-Tukey, power-of-2) ──────────────────────────
+function fft1d(re,im,inv){
+  const n=re.length;
+  for(let i=1,j=0;i<n;i++){let bit=n>>1;for(;j&bit;bit>>=1)j^=bit;j^=bit;if(i<j){[re[i],re[j]]=[re[j],re[i]];[im[i],im[j]]=[im[j],im[i]];}}
+  for(let len=2;len<=n;len<<=1){
+    const ang=2*Math.PI/len*(inv?1:-1);
+    const wRe=Math.cos(ang),wIm=Math.sin(ang);
+    for(let i=0;i<n;i+=len){
+      let uR=1,uI=0;
+      for(let j=0;j<len/2;j++){
+        const eR=re[i+j],eI=im[i+j];
+        const oR=re[i+j+len/2]*uR-im[i+j+len/2]*uI;
+        const oI=re[i+j+len/2]*uI+im[i+j+len/2]*uR;
+        re[i+j]=eR+oR;im[i+j]=eI+oI;
+        re[i+j+len/2]=eR-oR;im[i+j+len/2]=eI-oI;
+        const nR=uR*wRe-uI*wIm;uI=uR*wIm+uI*wRe;uR=nR;
+      }
+    }
+  }
+  if(inv){const s=1/n;for(let i=0;i<n;i++){re[i]*=s;im[i]*=s;}}
+}
+function fft2d(re,im,inv){
+  const tmp_r=new Float32Array(N),tmp_i=new Float32Array(N);
+  for(let y=0;y<N;y++){
+    tmp_r.set(re.subarray(y*N,y*N+N));tmp_i.set(im.subarray(y*N,y*N+N));
+    fft1d(tmp_r,tmp_i,inv);re.set(tmp_r,y*N);im.set(tmp_i,y*N);
+  }
+  for(let x=0;x<N;x++){
+    for(let y=0;y<N;y++){tmp_r[y]=re[y*N+x];tmp_i[y]=im[y*N+x];}
+    fft1d(tmp_r,tmp_i,inv);
+    for(let y=0;y<N;y++){re[y*N+x]=tmp_r[y];im[y*N+x]=tmp_i[y];}
+  }
+}
+function fftshift(re,im){
+  const h=N>>1;
+  for(let y=0;y<N;y++)for(let x=0;x<h;x++){
+    const a=y*N+x,b=((y+h)%N)*N+((x+h)%N);
+    [re[a],re[b]]=[re[b],re[a]];[im[a],im[b]]=[im[b],im[a]];
+  }
+}
+function ifftshift(re,im){fftshift(re,im);}
+
+// ── Object generators ──────────────────────────────────────
+function apodise(arr){
+  const h=N/2;
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+    const r=Math.hypot(x-h,y-h)/h;
+    const w=r<1?0.5*(1+Math.cos(Math.PI*r)):0;
+    arr[y*N+x]*=w;
+  }
+}
+function makeObject(name){
+  const a=new Float32Array(N*N);
+  const h=N/2,c=h|0;
+  if(name==='point'){a[c*N+c]=1;}
+  else if(name==='bars'){
+    const pds=[N/6,N/12,N/20,N/32];
+    let cs=N/8|0;
+    for(let i=0;i<4;i++){
+      const p=pds[i],ce=cs+(N/6|0);
+      for(let x=cs;x<ce&&x<N;x++){
+        const on=Math.sin(2*Math.PI*x/p)>0;
+        if(on)for(let y=N/4|0;y<3*N/4;y++)a[y*N+x]=1;
+      }
+      cs=ce+(N/16|0);
+    }
+  }
+  else if(name==='siemens'){
+    const ns=32;
+    for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+      const rx=x-h,ry=y-h,r=Math.hypot(rx,ry),phi=Math.atan2(ry,rx);
+      if(r<N/2.5)a[y*N+x]=Math.sin(ns*phi)>0?1:0;
+    }
+  }
+  else if(name==='usaf'){
+    const groups=[[N/8|0,N/8|0,12,40,8],[N/8|0,N/2|0,8,28,6],[N/2|0,N/8|0,5,18,4],[N/2|0,N/2|0,3,12,3]];
+    for(const [r0,c0,bw,bh,gap] of groups){
+      for(let e=0;e<3;e++){const r=r0+e*(bh+gap);for(let rr=r;rr<r+bh&&rr<N;rr++)for(let cc=c0;cc<c0+3*bw+2*gap&&cc<N;cc++)a[rr*N+cc]=1;}
+      for(let e=0;e<3;e++){const cc=c0+(N/5|0)+e*(bw+gap);for(let rr=r0;rr<r0+3*bh+2*gap&&rr<N;rr++)for(let ccc=cc;ccc<cc+bw&&ccc<N;ccc++)a[rr*N+ccc]=1;}
+    }
+  }
+  else if(name==='cross'){
+    for(let x=0;x<N;x++){a[(c-1)*N+x]=1;a[c*N+x]=1;a[(c+1)*N+x]=1;a[x*N+c-1]=1;a[x*N+c]=1;a[x*N+c+1]=1;}
+  }
+  else if(name==='twin_slit'){
+    const sw=Math.max(2,N/64|0),sep=N/8|0;
+    for(let y=c-sw;y<=c+sw;y++)for(let x=c-sep-sw;x<=c-sep+sw;x++)if(y>=0&&y<N&&x>=0&&x<N)a[y*N+x]=1;
+    for(let y=c-sw;y<=c+sw;y++)for(let x=c+sep-sw;x<=c+sep+sw;x++)if(y>=0&&y<N&&x>=0&&x<N)a[y*N+x]=1;
+  }
+  else if(name==='circle'){
+    for(let y=0;y<N;y++)for(let x=0;x<N;x++)if(Math.hypot(x-h,y-h)<N/4)a[y*N+x]=1;
+  }
+  apodise(a);
+  let mx=0;for(let i=0;i<a.length;i++)mx=Math.max(mx,a[i]);
+  if(mx>0)for(let i=0;i<a.length;i++)a[i]/=mx;
+  return a;
+}
+
+// ── Pupil ──────────────────────────────────────────────────
+function makePupil(name,radius){
+  const re=new Float32Array(N*N),im=new Float32Array(N*N);
+  const h=N/2;
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+    const nx=(x-h)/h,ny=(y-h)/h,r=Math.hypot(nx,ny),phi=Math.atan2(ny,nx);
+    let a=0,ph=0;
+    if(name==='circ'){a=r<=radius?1:0;}
+    else if(name==='annular'){a=(r<=radius&&r>radius*0.3)?1:0;}
+    else if(name==='gaussian'){const s=radius/Math.SQRT2;a=Math.exp(-r*r/(2*s*s));}
+    else if(name==='open'){a=1;}
+    else if(name==='slit'){a=Math.abs(nx)<0.12?1:0;}
+    else if(name==='vortex'){a=r<=radius?1:0;ph=phi;}
+    re[y*N+x]=a*Math.cos(ph);im[y*N+x]=a*Math.sin(ph);
+  }
+  return{re,im};
+}
+
+// ── Zernike ────────────────────────────────────────────────
+function zernike(type,x,y){
+  const rn=Math.hypot(x,y),phi=Math.atan2(y,x);
+  if(type===0)return rn<1?Math.sqrt(3)*(2*rn*rn-1):0;         // defocus
+  if(type===1)return rn<1?Math.sqrt(6)*rn*rn*Math.cos(2*phi):0; // astig45
+  if(type===2)return rn<1?Math.sqrt(8)*(3*rn*rn-2)*rn*Math.cos(phi):0; // comaX
+  if(type===3)return rn<1?Math.sqrt(5)*(6*rn**4-6*rn*rn+1):0;  // spherical
+  if(type===4)return rn<1?Math.sqrt(8)*rn**3*Math.cos(3*phi):0; // trefoil
+  return 0;
+}
+function addWavefront(pupRe,pupIm,coeffs){
+  const h=N/2;const wf=new Float32Array(N*N);
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+    const nx=(x-h)/h,ny=(y-h)/h;
+    let w=0;
+    for(let i=0;i<5;i++)w+=coeffs[i]*zernike(i,nx,ny);
+    w*=2*Math.PI;
+    const am=Math.sqrt(pupRe[y*N+x]**2+pupIm[y*N+x]**2);
+    const ph0=Math.atan2(pupIm[y*N+x],pupRe[y*N+x]);
+    pupRe[y*N+x]=am*Math.cos(ph0+w);
+    pupIm[y*N+x]=am*Math.sin(ph0+w);
+    wf[y*N+x]=w*am>0?w/(2*Math.PI):0;
+  }
+  return wf;
+}
+
+// ── Colormaps ──────────────────────────────────────────────
+function applyColormap(arr,type,dark){
+  const img=new Uint8ClampedArray(N*N*4);
+  let mx=0,mn=Infinity;
+  for(let i=0;i<arr.length;i++){mx=Math.max(mx,arr[i]);mn=Math.min(mn,arr[i]);}
+  const rng=mx-mn||1;
+  for(let i=0;i<arr.length;i++){
+    const t=(arr[i]-mn)/rng;
+    let r,g,b;
+    if(type==='hot'){r=Math.min(1,t*2.5)*255;g=Math.max(0,t*2.5-1)*255;b=Math.max(0,t*3-2)*255;}
+    else if(type==='glow'){r=t<0.5?0:Math.min(1,(t-0.5)*4)*255;g=Math.min(1,t*2)*255;b=Math.min(1,t*1.5)*255;}
+    else if(type==='gray'){const v=t*255;r=g=b=v;}
+    else if(type==='phase'){
+      const h6=(((t*6)%6)+6)%6;
+      const f=h6%1,p=0,q=1-f;
+      if(h6<1){r=255;g=f*255;b=0;}
+      else if(h6<2){r=q*255;g=255;b=0;}
+      else if(h6<3){r=0;g=255;b=f*255;}
+      else if(h6<4){r=0;g=q*255;b=255;}
+      else if(h6<5){r=f*255;g=0;b=255;}
+      else{r=255;g=0;b=q*255;}
+    }
+    img[i*4]=r;img[i*4+1]=g;img[i*4+2]=b;img[i*4+3]=255;
+  }
+  return img;
+}
+function applyPupilCmap(arr){
+  const img=new Uint8ClampedArray(N*N*4);
+  let mx=0;for(let i=0;i<arr.length;i++)mx=Math.max(mx,arr[i]);
+  for(let i=0;i<arr.length;i++){
+    const t=arr[i]/(mx||1);const v=t*255;
+    img[i*4]=v;img[i*4+1]=v;img[i*4+2]=v;img[i*4+3]=255;
+  }
+  return img;
+}
+function applyPhaseCmap(arr,mask){
+  const img=new Uint8ClampedArray(N*N*4);
+  for(let i=0;i<arr.length;i++){
+    if(mask&&mask[i]<0.05){img[i*4+3]=255;continue;}
+    const t=((arr[i]+Math.PI)/(2*Math.PI)+1)%1;
+    const h6=(t*6)%6,f=h6%1,q=1-f;
+    let r=0,g=0,b=0;
+    if(h6<1){r=255;g=f*200;b=100;}
+    else if(h6<2){r=q*255;g=200;b=100;}
+    else if(h6<3){r=50;g=200;b=f*255;}
+    else if(h6<4){r=50;g=q*200;b=255;}
+    else if(h6<5){r=f*200;g=50;b=255;}
+    else{r=200;g=50;b=q*255;}
+    img[i*4]=r;img[i*4+1]=g;img[i*4+2]=b;img[i*4+3]=255;
+  }
+  return img;
+}
+function putImage(canvas,data){
+  const ctx=canvas.getContext('2d');
+  const id=new ImageData(data,N,N);ctx.putImageData(id,0,0);
+}
+
+// ── Normalize ──────────────────────────────────────────────
+function norm(arr){
+  let mx=0;for(let v of arr)mx=Math.max(mx,v);
+  if(!mx)return arr;const r=new Float32Array(arr.length);
+  for(let i=0;i<arr.length;i++)r[i]=arr[i]/mx;return r;
+}
+function logNorm(arr){
+  const r=new Float32Array(arr.length);let mx=0;
+  for(let i=0;i<arr.length;i++){r[i]=Math.log1p(arr[i]);}
+  for(let v of r)mx=Math.max(mx,v);
+  if(mx)for(let i=0;i<r.length;i++)r[i]/=mx;
+  return r;
+}
+function magnitude(re,im){
+  const m=new Float32Array(N*N);
+  for(let i=0;i<N*N;i++)m[i]=Math.sqrt(re[i]**2+im[i]**2);return m;
+}
+function angle(re,im){
+  const a=new Float32Array(N*N);
+  for(let i=0;i<N*N;i++)a[i]=Math.atan2(im[i],re[i]);return a;
+}
+
+// ── Main render ────────────────────────────────────────────
+function render(){
+  const objName=document.getElementById('objSel').value;
+  const f1=+document.getElementById('f1').value;
+  const f2=+document.getElementById('f2').value;
+  const pr=document.getElementById('pr').value/100;
+  const pupName=document.getElementById('pupSel').value;
+  const coeffs=[
+    +document.getElementById('a0').value,
+    +document.getElementById('a1').value,
+    +document.getElementById('a2').value,
+    +document.getElementById('a3').value,
+    +document.getElementById('a4').value
+  ];
+
+  const M=-f2/f1;
+  document.getElementById('magV').textContent=M.toFixed(2)+'×';
+
+  const objAmpl=makeObject(objName);
+  const objRe=new Float32Array(N*N);const objIm=new Float32Array(N*N);
+  for(let i=0;i<N*N;i++){objRe[i]=objAmpl[i];}
+
+  // FT1: object → Fourier plane
+  const fRe=objRe.slice();const fIm=objIm.slice();
+  ifftshift(fRe,fIm);fft2d(fRe,fIm,false);fftshift(fRe,fIm);
+
+  // Build pupil + wavefront
+  const{re:pRe,im:pIm}=makePupil(pupName,pr);
+  const wf=addWavefront(pRe,pIm,coeffs);
+  const pupMag=magnitude(pRe,pIm);
+
+  // Filter in Fourier plane
+  const ffRe=new Float32Array(N*N),ffIm=new Float32Array(N*N);
+  for(let i=0;i<N*N;i++){
+    ffRe[i]=fRe[i]*pRe[i]-fIm[i]*pIm[i];
+    ffIm[i]=fRe[i]*pIm[i]+fIm[i]*pRe[i];
+  }
+
+  // IFT: Fourier → image plane
+  ifftshift(ffRe,ffIm);fft2d(ffRe,ffIm,true);fftshift(ffRe,ffIm);
+  const imgInt=new Float32Array(N*N);
+  for(let i=0;i<N*N;i++)imgInt[i]=ffRe[i]**2+ffIm[i]**2;
+
+  // PSF: IFT of aberrated pupil
+  const psRe=pRe.slice(),psIm=pIm.slice();
+  ifftshift(psRe,psIm);fft2d(psRe,psIm,true);fftshift(psRe,psIm);
+  const psf=new Float32Array(N*N);
+  for(let i=0;i<N*N;i++)psf[i]=psRe[i]**2+psIm[i]**2;
+
+  // MTF from PSF
+  const mRe=psf.slice(),mIm=new Float32Array(N*N);
+  ifftshift(mRe,mIm);fft2d(mRe,mIm,false);fftshift(mRe,mIm);
+  const mtf=magnitude(mRe,mIm);let mmx=0;
+  for(let v of mtf)mmx=Math.max(mmx,v);
+  const mtfN=new Float32Array(N*N);if(mmx)for(let i=0;i<N*N;i++)mtfN[i]=mtf[i]/mmx;
+
+  // RMS WFE & Strehl
+  let rms=0,n2=0;
+  for(let i=0;i<N*N;i++)if(pupMag[i]>0.1){rms+=wf[i]**2;n2++;}
+  rms=n2?Math.sqrt(rms/n2):0;
+  const strehl=Math.exp(-(2*Math.PI*rms)**2);
+  document.getElementById('rmsV').textContent=rms.toFixed(3)+' λ';
+  document.getElementById('strV').textContent=strehl.toFixed(3);
+  const dlBadge=document.getElementById('dlBadge');
+  if(rms<0.071){dlBadge.className='badge badge-ok';dlBadge.textContent='YES ✓';}
+  else if(rms<0.2){dlBadge.className='badge badge-warn';dlBadge.textContent='NEARLY';}
+  else{dlBadge.className='badge badge-bad';dlBadge.textContent='NO ✗';}
+
+  // Draw canvases
+  putImage(document.getElementById('cObj'),applyColormap(objAmpl,cmap));
+  putImage(document.getElementById('cFamp'),applyColormap(logNorm(magnitude(fRe,fIm)),cmap));
+  putImage(document.getElementById('cPup'),applyPhaseCmap(angle(pRe,pIm),pupMag));
+  putImage(document.getElementById('cImg'),applyColormap(norm(imgInt),cmap));
+
+  // PSF crop (centre 25%)
+  const psfCrop=new Float32Array(N*N);const q=N*3/8|0,q2=N*5/8|0;
+  const psfMax=norm(psf);for(let y=q;y<q2;y++)for(let x=q;x<q2;x++)psfCrop[y*N+x]=psfMax[y*N+x];
+  putImage(document.getElementById('cPSF'),applyColormap(psfCrop,cmap));
+
+  // Wavefront
+  const wfDisp=new Float32Array(N*N);
+  for(let i=0;i<N*N;i++)wfDisp[i]=pupMag[i]>0.1?wf[i]:0;
+  putImage(document.getElementById('cWF'),applyPhaseCmap(wfDisp.map(v=>v*2*Math.PI),pupMag));
+
+  // MTF crop
+  const mtfCrop=new Float32Array(N*N);
+  for(let y=q;y<q2;y++)for(let x=q;x<q2;x++)mtfCrop[y*N+x]=mtfN[y*N+x];
+  putImage(document.getElementById('cMTF'),applyColormap(mtfCrop,'plasma'||cmap));
+
+  // Profile plot
+  drawProfiles(objAmpl,norm(imgInt),mtfN);
+}
+
+function drawProfiles(obj,img,mtf){
+  const canvas=document.getElementById('cPlot');
+  const ctx=canvas.getContext('2d');
+  const w=canvas.width,h=canvas.height;
+  const dark=window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const bg=dark?'#12121a':'#ffffff';
+  const grid=dark?'#222230':'#e8e8f0';
+  const tc=dark?'#ccccee':'#334455';
+
+  ctx.fillStyle=bg;ctx.fillRect(0,0,w,h);
+
+  // Grid lines
+  ctx.strokeStyle=grid;ctx.lineWidth=0.5;
+  for(let i=0;i<=4;i++){const y=h*i/4;ctx.beginPath();ctx.moveTo(40,y);ctx.lineTo(w-4,y);ctx.stroke();}
+  for(let i=0;i<=8;i++){const x=40+i*(w-44)/8;ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h-12);ctx.stroke();}
+
+  // Object profile (middle row)
+  const c=N/2|0;
+  function drawLine(col,data,off){
+    ctx.beginPath();ctx.strokeStyle=col;ctx.lineWidth=1.5;
+    for(let x=0;x<N;x++){
+      const px=40+x*(w-44)/N;const py=(h-16)*(1-data[c*N+x+off]);
+      x===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
+    }
+    ctx.stroke();
+  }
+  drawLine('#4488ff',obj,0);
+  drawLine('#ff8844',img,0);
+
+  // Radial MTF (right half)
+  ctx.beginPath();ctx.strokeStyle='#44cc88';ctx.lineWidth=1.2;
+  const pts=60,r0=N/2|0;
+  for(let i=0;i<pts;i++){
+    const r=i*(N/2)/pts,px=40+i*(w-44)/pts,rr=r|0;
+    // sample concentric ring
+    let sum=0,cnt=0;
+    for(let a=0;a<16;a++){
+      const ax=r0+(rr*Math.cos(a*Math.PI/8))|0,ay=r0+(rr*Math.sin(a*Math.PI/8))|0;
+      if(ax>=0&&ax<N&&ay>=0&&ay<N){sum+=mtf[ay*N+ax];cnt++;}
+    }
+    const v=cnt?sum/cnt:0;
+    const py=(h-16)*(1-v);
+    i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
+  }
+  ctx.stroke();
+
+  // Legend
+  ctx.font='10px monospace';
+  ctx.fillStyle='#4488ff';ctx.fillRect(44,4,18,2);ctx.fillStyle=tc;ctx.fillText('Object',66,8);
+  ctx.fillStyle='#ff8844';ctx.fillRect(44,12,18,2);ctx.fillStyle=tc;ctx.fillText('Image',66,16);
+  ctx.fillStyle='#44cc88';ctx.fillRect(44,20,18,2);ctx.fillStyle=tc;ctx.fillText('MTF',66,24);
+
+  // Y axis label
+  ctx.save();ctx.translate(12,h/2);ctx.rotate(-Math.PI/2);
+  ctx.fillStyle=tc;ctx.font='9px monospace';ctx.textAlign='center';ctx.fillText('amplitude / MTF',0,0);
+  ctx.restore();
+}
+
+// ── Bindings ──────────────────────────────────────────────
+function bind(id,outId,fmt){
+  document.getElementById(id).addEventListener('input',function(){
+    document.getElementById(outId).textContent=fmt?fmt(this.value):this.value;
+    render();
+  });
+}
+bind('f1','f1v');bind('f2','f2v');bind('wl','wlv');
+bind('pr','prv',v=>(v/100).toFixed(2));
+bind('a0','a0v',v=>(+v).toFixed(1));bind('a1','a1v',v=>(+v).toFixed(1));
+bind('a2','a2v',v=>(+v).toFixed(1));bind('a3','a3v',v=>(+v).toFixed(1));
+bind('a4','a4v',v=>(+v).toFixed(1));
+document.getElementById('objSel').addEventListener('change',render);
+document.getElementById('pupSel').addEventListener('change',render);
+
+function resetAbers(){
+  ['a0','a1','a2','a3','a4'].forEach((id,i)=>{
+    document.getElementById(id).value=0;
+    document.getElementById(id+'v').textContent='0.0';
+  });render();
+}
+
+render();
+</script>

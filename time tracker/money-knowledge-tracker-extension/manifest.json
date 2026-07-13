@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "Money & Knowledge Tracker",
+  "version": "1.0",
+  "description": "Track daily hours across your focus areas \u2014 SBS, Laser, AI, and more.",
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
+  },
+  "permissions": [
+    "storage",
+    "alarms"
+  ],
+  "icons": {
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}

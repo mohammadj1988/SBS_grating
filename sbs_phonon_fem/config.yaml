@@ -1,0 +1,33 @@
+# Default run configuration for the SBS co-propagating phonon FDTD model.
+# Every field here maps 1:1 onto sbs_phonon_fem.config.SimConfig -- see that
+# file for units and meaning. Override any subset; unset fields fall back to
+# the SimConfig dataclass defaults.
+
+material_name: water        # water | collagen_gel | cartilage_hydrogel
+
+lambda_opt_m: 780.24e-9
+theta_deg: 30.0
+NA: 0.70
+
+domain_size_um: 15.0
+points_per_wavelength: 10   # spec minimum; increase for quantitative runs
+damping_layer_fraction: 0.15
+target_boundary_reflection: 1.0e-3
+
+forcing_waist_um: 1.0
+F0: 1.0
+
+freq_min_ghz: 0.1
+freq_max_ghz: 2.0
+n_freq_steps: 50
+
+n_cycles_warmup: 5
+n_cycles_measure: 10
+courant_number: 0.5
+
+kelvin_voigt_eta: 0.0        # >0 to add Kelvin-Voigt damping (stage 2, realistic linewidths)
+
+theta_b_steps: 9
+
+output_dir: outputs
+quick: false

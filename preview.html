@@ -1,0 +1,93 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>AI Academy Portal</title>
+<style>
+body{font-family:Arial;background:#0f172a;color:white;margin:0}
+header{padding:20px;background:#1e293b;text-align:center}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:15px;padding:20px}
+.card{background:#1e293b;padding:20px;border-radius:10px;cursor:pointer}
+.section{display:none;padding:20px}
+a{color:#7dd3fc;text-decoration:none}
+li{margin:8px 0}
+</style>
+<script>
+function show(id){
+ document.querySelectorAll('.section').forEach(s=>s.style.display='none');
+ document.getElementById(id).style.display='block';
+}
+</script>
+</head>
+<body>
+<header>
+<h1>AI Academy (Clickable Learning Portal)</h1>
+</header>
+
+<div class="grid">
+<div class="card" onclick="show('python')">Python Advanced</div>
+<div class="card" onclick="show('sql')">SQL/PostgreSQL</div>
+<div class="card" onclick="show('ml')">Machine Learning</div>
+<div class="card" onclick="show('llm')">LLMs & AI Agents</div>
+<div class="card" onclick="show('cloud')">Cloud Deployment</div>
+<div class="card" onclick="show('product')">Build AI Products</div>
+</div>
+
+<div id="python" class="section">
+<h2>Python Advanced</h2>
+<ul>
+<li><a href="https://docs.python.org/3/tutorial/" target="_blank">Official Python Tutorial</a></li>
+<li><a href="https://realpython.com/" target="_blank">Real Python</a></li>
+<li><a href="https://numpy.org/learn/" target="_blank">NumPy Learning Resources</a></li>
+<li><a href="https://pandas.pydata.org/docs/getting_started/" target="_blank">Pandas Guide</a></li>
+</ul>
+</div>
+
+<div id="sql" class="section">
+<h2>SQL/PostgreSQL</h2>
+<ul>
+<li><a href="https://www.postgresql.org/docs/" target="_blank">PostgreSQL Documentation</a></li>
+<li><a href="https://sqlbolt.com/" target="_blank">SQLBolt Interactive Lessons</a></li>
+<li><a href="https://www.pgexercises.com/" target="_blank">PostgreSQL Exercises</a></li>
+</ul>
+</div>
+
+<div id="ml" class="section">
+<h2>Machine Learning</h2>
+<ul>
+<li><a href="https://scikit-learn.org/stable/tutorial/" target="_blank">Scikit-Learn Tutorial</a></li>
+<li><a href="https://www.deeplearning.ai/" target="_blank">DeepLearning.AI</a></li>
+<li><a href="https://www.kaggle.com/learn" target="_blank">Kaggle Learn</a></li>
+</ul>
+</div>
+
+<div id="llm" class="section">
+<h2>LLMs & AI Agents</h2>
+<ul>
+<li><a href="https://platform.openai.com/docs" target="_blank">OpenAI Documentation</a></li>
+<li><a href="https://docs.langchain.com/" target="_blank">LangChain</a></li>
+<li><a href="https://docs.llamaindex.ai/" target="_blank">LlamaIndex</a></li>
+</ul>
+</div>
+
+<div id="cloud" class="section">
+<h2>Cloud Deployment</h2>
+<ul>
+<li><a href="https://docs.docker.com/get-started/" target="_blank">Docker Get Started</a></li>
+<li><a href="https://aws.amazon.com/getting-started/" target="_blank">AWS Learning</a></li>
+<li><a href="https://learn.microsoft.com/azure/" target="_blank">Azure Learn</a></li>
+</ul>
+</div>
+
+<div id="product" class="section">
+<h2>Building AI Products</h2>
+<ul>
+<li><a href="https://www.ycombinator.com/library" target="_blank">Y Combinator Startup Library</a></li>
+<li><a href="https://www.indiehackers.com/" target="_blank">Indie Hackers</a></li>
+<li><a href="https://www.producthunt.com/" target="_blank">Product Hunt</a></li>
+</ul>
+</div>
+
+</body>
+</html>

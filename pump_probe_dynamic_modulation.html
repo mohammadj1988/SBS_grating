@@ -1,0 +1,262 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans);color:var(--color-text-primary)}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.25rem;margin-bottom:12px}
+.section-title{font-size:11px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+.row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.row label{font-size:13px;color:var(--color-text-secondary);width:130px;flex-shrink:0}
+.row input[type=range]{flex:1}
+.row .val{font-size:13px;font-weight:500;min-width:68px;text-align:right;font-family:var(--font-mono)}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin:12px 0}
+.metric{background:var(--color-background-secondary);border-radius:8px;padding:.75rem 1rem}
+.metric-label{font-size:11px;color:var(--color-text-secondary);margin-bottom:3px}
+.metric-val{font-size:16px;font-weight:500;font-family:var(--font-mono)}
+.metric-val.blue{color:#185FA5}.metric-val.green{color:#3B6D11}.metric-val.purple{color:#534AB7}.metric-val.amber{color:#854F0B}
+.badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:6px;margin:2px}
+.b-blue{background:#E6F1FB;color:#0C447C}
+.b-green{background:#EAF3DE;color:#27500A}
+.b-purple{background:#EEEDFE;color:#3C3489}
+.b-red{background:#FCEBEB;color:#791F1F}
+.b-amber{background:#FAEEDA;color:#633806}
+.insight{border-left:3px solid #7F77DD;padding:.6rem 1rem;margin:10px 0;font-size:13px;color:var(--color-text-secondary);border-radius:0 6px 6px 0;background:var(--color-background-secondary);line-height:1.55}
+.insight strong{font-weight:500;color:var(--color-text-primary)}
+.waveform-wrap{position:relative;width:100%;height:120px}
+.spectrum-wrap{position:relative;width:100%;height:200px}
+.seg{display:flex;gap:2px;margin:10px 0}
+.seg button{flex:1;padding:6px 4px;font-size:12px;border-radius:6px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);cursor:pointer;color:var(--color-text-secondary);transition:all .12s}
+.seg button.on{background:var(--color-background-primary);border-color:var(--color-border-primary);color:var(--color-text-primary);font-weight:500}
+canvas{display:block;width:100%}
+</style>
+
+<h2 class="sr-only">Dynamic pump-probe modulation simulator: adjust frequencies, noise level, and signal strength to see live waveform and frequency spectrum</h2>
+
+<div class="card">
+  <div class="section-title">Modulation parameters</div>
+  <div class="row">
+    <label>Pump frequency f₁</label>
+    <input type="range" id="f1" min="50" max="500" step="1" value="102">
+    <span class="val" id="f1v">102 kHz</span>
+  </div>
+  <div class="row">
+    <label>Probe frequency f₂</label>
+    <input type="range" id="f2" min="1" max="50" step="1" value="2">
+    <span class="val" id="f2v">2 kHz</span>
+  </div>
+  <div class="row">
+    <label>Pump amplitude</label>
+    <input type="range" id="a1" min="10" max="100" step="1" value="70">
+    <span class="val" id="a1v">70%</span>
+  </div>
+  <div class="row">
+    <label>Probe amplitude</label>
+    <input type="range" id="a2" min="10" max="100" step="1" value="50">
+    <span class="val" id="a2v">50%</span>
+  </div>
+  <div class="row">
+    <label>Noise floor</label>
+    <input type="range" id="noise" min="0" max="100" step="1" value="40">
+    <span class="val" id="noisev">40%</span>
+  </div>
+  <div class="row">
+    <label>Brillouin signal</label>
+    <input type="range" id="bsig" min="1" max="30" step="1" value="10">
+    <span class="val" id="bsigv">10%</span>
+  </div>
+</div>
+
+<div class="card">
+  <div class="section-title">Mode</div>
+  <div class="seg">
+    <button class="on" id="btn-nomod" onclick="setMode('nomod')">No modulation</button>
+    <button id="btn-onemod" onclick="setMode('onemod')">One-beam (probe only)</button>
+    <button id="btn-twomod" onclick="setMode('twomod')">Two-beam (pump + probe)</button>
+  </div>
+</div>
+
+<div class="metrics">
+  <div class="metric"><div class="metric-label">Lock-in frequency</div><div class="metric-val purple" id="m-lockin">—</div></div>
+  <div class="metric"><div class="metric-label">Difference (f₁ − f₂)</div><div class="metric-val green" id="m-diff">100 kHz</div></div>
+  <div class="metric"><div class="metric-label">Sum (f₁ + f₂)</div><div class="metric-val amber" id="m-sum">104 kHz</div></div>
+  <div class="metric"><div class="metric-label">SNR at lock-in</div><div class="metric-val blue" id="m-snr">—</div></div>
+</div>
+
+<div id="insight-box" class="insight">Select a mode above to see what the lock-in amplifier captures.</div>
+
+<div class="card" style="margin-top:4px">
+  <div class="section-title">Time-domain signal at detector</div>
+  <div class="waveform-wrap"><canvas id="c-wave" role="img" aria-label="Time domain waveform at detector"></canvas></div>
+</div>
+
+<div class="card">
+  <div class="section-title">Frequency spectrum (what the lock-in sees)</div>
+  <div class="spectrum-wrap"><canvas id="c-spec" role="img" aria-label="Frequency spectrum showing noise floor, carrier peaks, and Brillouin mixing product"></canvas></div>
+  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">
+    <span class="badge b-red">Noise / background</span>
+    <span class="badge b-blue">Pump carrier</span>
+    <span class="badge b-green">Probe carrier</span>
+    <span class="badge b-purple">Brillouin beat note</span>
+    <span class="badge b-amber" id="lockin-badge" style="display:none">Lock-in window</span>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+let mode='nomod';
+let wChart,sChart;
+
+const ids=['f1','f2','a1','a2','noise','bsig'];
+ids.forEach(id=>{
+  document.getElementById(id).addEventListener('input',()=>{update()});
+});
+
+function p(id){return parseInt(document.getElementById(id).value)}
+
+function setMode(m){
+  mode=m;
+  ['nomod','onemod','twomod'].forEach(x=>{
+    document.getElementById('btn-'+x).classList.toggle('on',x===m);
+  });
+  update();
+}
+
+function update(){
+  const f1=p('f1'),f2=p('f2'),a1=p('a1'),a2=p('a2'),noise=p('noise'),bsig=p('bsig');
+  document.getElementById('f1v').textContent=f1+' kHz';
+  document.getElementById('f2v').textContent=f2+' kHz';
+  document.getElementById('a1v').textContent=a1+'%';
+  document.getElementById('a2v').textContent=a2+'%';
+  document.getElementById('noisev').textContent=noise+'%';
+  document.getElementById('bsigv').textContent=bsig+'%';
+
+  const diff=f1-f2, sumf=f1+f2;
+  document.getElementById('m-diff').textContent=diff+' kHz';
+  document.getElementById('m-sum').textContent=sumf+' kHz';
+
+  let lockin='—', snr='—';
+  if(mode==='onemod'){lockin=f2+' kHz';}
+  if(mode==='twomod'){lockin=diff+' kHz';}
+  document.getElementById('m-lockin').textContent=lockin;
+
+  if(mode==='nomod'){
+    const raw=bsig*a1*a2/10000;
+    snr=(raw/(noise/10+1)).toFixed(2)+'  (no rejection)';
+    document.getElementById('lockin-badge').style.display='none';
+    document.getElementById('insight-box').innerHTML='<strong>No modulation:</strong> detector integrates everything. Brillouin signal ('+bsig+'%) is buried under noise floor ('+noise+'%). No frequency discrimination.';
+  } else if(mode==='onemod'){
+    const rej=noise/4;
+    const sigStrength=bsig*a2/100;
+    snr=(sigStrength/(rej/100+1)).toFixed(2)+'  (moderate)';
+    document.getElementById('lockin-badge').style.display='inline-block';
+    document.getElementById('lockin-badge').textContent='Lock-in @ '+f2+' kHz';
+    document.getElementById('insight-box').innerHTML='<strong>One-beam modulation:</strong> lock-in tuned to '+f2+' kHz rejects broadband noise. But laser leakage and fluorescence excited by the probe also appear at '+f2+' kHz — the Brillouin signal is not fully isolated.';
+  } else {
+    const rej=noise/20;
+    const sigStrength=bsig*a1*a2/10000;
+    snr=(sigStrength*100/(rej+0.1)).toFixed(1)+'×  (high)';
+    document.getElementById('lockin-badge').style.display='inline-block';
+    document.getElementById('lockin-badge').textContent='Lock-in @ '+diff+' kHz';
+    document.getElementById('insight-box').innerHTML='<strong>Two-beam modulation:</strong> lock-in tuned to the beat note at <strong>'+diff+' kHz</strong> = f₁ − f₂ = '+f1+' − '+f2+'. Only signals involving <em>both</em> beams produce this frequency. Noise rejection is ~'+Math.round(noise/2)+'× better than single-beam.';
+  }
+  document.getElementById('m-snr').textContent=snr;
+
+  drawWaveform(f1,f2,a1,a2,noise,bsig);
+  drawSpectrum(f1,f2,a1,a2,noise,bsig,diff,sumf);
+}
+
+function drawWaveform(f1,f2,a1,a2,noise,bsig){
+  const N=300;
+  const labels=Array.from({length:N},(_,i)=>i);
+  const data=Array.from({length:N},(_,i)=>{
+    const t=i/N;
+    const noiseAmp=(noise/100)*0.6*(Math.random()-.5)*2;
+    if(mode==='nomod'){
+      return noiseAmp*90 + (bsig/100)*30*Math.sin(2*Math.PI*10*t);
+    } else if(mode==='onemod'){
+      const probe=(a2/100)*60*Math.sin(2*Math.PI*f2*t/8);
+      return probe + noiseAmp*20 + (bsig/100)*8*Math.sin(2*Math.PI*10*t);
+    } else {
+      const pump=(a1/100)*40*Math.sin(2*Math.PI*f1*t/80);
+      const probe=(a2/100)*55*Math.sin(2*Math.PI*f2*t/8);
+      const beat=(bsig/100)*28*Math.sin(2*Math.PI*(f1-f2)*t/80);
+      return pump+probe+beat+noiseAmp*10;
+    }
+  });
+
+  if(wChart){wChart.data.datasets[0].data=data;wChart.update('none');return;}
+  wChart=new Chart(document.getElementById('c-wave'),{
+    type:'line',
+    data:{labels,datasets:[{label:'Detector signal',data,borderColor:'#378ADD',borderWidth:1.2,pointRadius:0,tension:0.1,fill:false}]},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:80},plugins:{legend:{display:false}},scales:{x:{display:false},y:{display:true,grid:{color:'rgba(136,135,128,0.15)'},ticks:{font:{size:10},color:'#888780',maxTicksLimit:5}}}}
+  });
+}
+
+function drawSpectrum(f1,f2,a1,a2,noise,bsig,diff,sumf){
+  const maxF=Math.max(f1,diff,sumf)+30;
+  const bins=200;
+  const step=maxF/bins;
+  const labels=Array.from({length:bins},(_,i)=>Math.round(i*step));
+
+  const noiseData=Array.from({length:bins},()=>noise*0.4*(0.6+0.4*Math.random()));
+  const pumpData=Array(bins).fill(0);
+  const probeData=Array(bins).fill(0);
+  const brillouinData=Array(bins).fill(0);
+  const lockinData=Array(bins).fill(0);
+
+  function setBin(arr,freq,amp,width=2){
+    const idx=Math.round(freq/step);
+    for(let d=-width;d<=width;d++){
+      if(idx+d>=0&&idx+d<bins){
+        arr[idx+d]=Math.max(arr[idx+d],amp*Math.exp(-0.5*(d/1.2)**2));
+      }
+    }
+  }
+
+  if(mode==='nomod'){
+    setBin(noiseData,f2,noise*0.7);
+    setBin(noiseData,f1,noise*0.8);
+    setBin(brillouinData,diff,bsig*1.0);
+  } else if(mode==='onemod'){
+    setBin(probeData,f2,(a2/100)*85,3);
+    setBin(noiseData,f2,noise*0.5,2);
+    setBin(brillouinData,diff,bsig*1.2);
+    setBin(lockinData,f2,30,6);
+  } else {
+    setBin(pumpData,f1,(a1/100)*90,3);
+    setBin(probeData,f2,(a2/100)*80,3);
+    setBin(brillouinData,diff,(bsig/100)*(a1/100)*(a2/100)*600,2);
+    setBin(brillouinData,sumf,(bsig/100)*(a1/100)*(a2/100)*400,2);
+    setBin(lockinData,diff,40,7);
+  }
+
+  const datasets=[
+    {label:'Noise',data:noiseData,backgroundColor:'rgba(226,75,74,0.25)',borderColor:'rgba(226,75,74,0.5)',borderWidth:0.5,order:4},
+    {label:'Pump',data:pumpData,backgroundColor:'rgba(53,138,221,0.55)',borderColor:'#185FA5',borderWidth:0.5,order:3},
+    {label:'Probe',data:probeData,backgroundColor:'rgba(99,153,34,0.55)',borderColor:'#3B6D11',borderWidth:0.5,order:3},
+    {label:'Brillouin',data:brillouinData,backgroundColor:'rgba(127,119,221,0.9)',borderColor:'#534AB7',borderWidth:1,order:1},
+    {label:'Lock-in window',data:lockinData,backgroundColor:'rgba(239,159,39,0.18)',borderColor:'rgba(186,117,23,0.5)',borderWidth:0.5,order:2},
+  ];
+
+  if(sChart){
+    sChart.data.datasets.forEach((ds,i)=>{ds.data=datasets[i].data;});
+    sChart.options.scales.x.max=bins-1;
+    sChart.update('none');
+    return;
+  }
+  sChart=new Chart(document.getElementById('c-spec'),{
+    type:'bar',
+    data:{labels,datasets},
+    options:{
+      responsive:true,maintainAspectRatio:false,animation:{duration:80},
+      plugins:{legend:{display:false},tooltip:{callbacks:{title:t=>{const v=labels[t[0].dataIndex];return v+' kHz';},label:t=>{const v=Math.round(t.raw);return v>0?t.dataset.label+': '+v:null;}}}},
+      scales:{
+        x:{display:true,stacked:true,ticks:{maxTicksLimit:10,font:{size:10},color:'#888780',callback:(v,i)=>{const lv=labels[i];return lv%Math.round(maxF/8)===0?lv+'k':'';}},grid:{display:false}},
+        y:{display:true,stacked:true,ticks:{font:{size:10},color:'#888780',maxTicksLimit:4},grid:{color:'rgba(136,135,128,0.15)'}}
+      }
+    }
+  });
+}
+
+update();
+</script>

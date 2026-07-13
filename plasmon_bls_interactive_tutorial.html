@@ -1,0 +1,698 @@
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font-sans); }
+
+  .lesson { padding: 1.5rem 0; max-width: 680px; }
+
+  .progress { display: flex; gap: 6px; margin-bottom: 1.5rem; flex-wrap: wrap; }
+  .dot { width: 28px; height: 6px; border-radius: 3px; background: var(--color-border-tertiary); cursor: pointer; transition: background .2s; }
+  .dot.active { background: var(--color-text-info); }
+  .dot.done { background: var(--color-border-secondary); }
+
+  .card { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1.25rem 1.5rem; margin-bottom: 1rem; }
+
+  .section-title { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .08em; color: var(--color-text-tertiary); margin-bottom: .5rem; }
+  .main-title { font-size: 18px; font-weight: 500; color: var(--color-text-primary); margin-bottom: .75rem; }
+  .body-text { font-size: 14px; color: var(--color-text-secondary); line-height: 1.65; }
+  .body-text strong { font-weight: 500; color: var(--color-text-primary); }
+
+  .eq-box { background: var(--color-background-secondary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: .75rem 1rem; margin: .75rem 0; font-family: var(--font-mono); font-size: 13px; color: var(--color-text-primary); line-height: 1.8; }
+
+  .tag { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 20px; background: var(--color-background-info); color: var(--color-text-info); margin-right: 6px; margin-bottom: 4px; font-weight: 500; }
+  .tag.amber { background: var(--color-background-warning); color: var(--color-text-warning); }
+  .tag.green { background: var(--color-background-success); color: var(--color-text-success); }
+
+  .nav { display: flex; align-items: center; justify-content: space-between; margin-top: 1rem; }
+  .nav button { font-size: 13px; padding: 8px 18px; border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-secondary); background: transparent; color: var(--color-text-primary); cursor: pointer; }
+  .nav button:hover { background: var(--color-background-secondary); }
+  .nav button.primary { background: var(--color-background-info); color: var(--color-text-info); border-color: transparent; }
+  .counter { font-size: 12px; color: var(--color-text-tertiary); }
+
+  canvas { width: 100% !important; border-radius: var(--border-radius-md); }
+
+  .slider-row { display: flex; align-items: center; gap: 10px; margin: .6rem 0; font-size: 13px; color: var(--color-text-secondary); }
+  .slider-row label { min-width: 100px; }
+  .slider-row input { flex: 1; }
+  .slider-row span { min-width: 50px; text-align: right; font-weight: 500; color: var(--color-text-primary); font-size: 13px; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 500px) { .two-col { grid-template-columns: 1fr; } }
+
+  .mini-card { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: .75rem 1rem; font-size: 13px; }
+  .mini-card .lbl { font-size: 11px; color: var(--color-text-tertiary); margin-bottom: 4px; }
+  .mini-card .val { font-size: 20px; font-weight: 500; color: var(--color-text-primary); }
+
+  .step-hidden { display: none; }
+
+  .legend-row { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--color-text-secondary); margin-bottom: 4px; }
+  .legend-dot { width: 12px; height: 4px; border-radius: 2px; flex-shrink: 0; }
+
+  .diagram-wrap { margin: .75rem 0; }
+</style>
+
+<div class="lesson">
+
+  <div class="progress" id="dots"></div>
+  <div id="panel"></div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+const textClr = isDark ? '#c2c0b6' : '#3d3d3a';
+const mutedClr = isDark ? '#7a7870' : '#888780';
+const borderClr = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)';
+const bgClr = isDark ? '#1e1e1c' : '#ffffff';
+const bg2 = isDark ? '#2a2a28' : '#f5f4ef';
+
+Chart.defaults.color = mutedClr;
+Chart.defaults.borderColor = borderClr;
+Chart.defaults.font.family = 'var(--font-sans)';
+Chart.defaults.font.size = 11;
+
+let currentStep = 0;
+const charts = {};
+
+// ── Physics helpers ──────────────────────────────────────────────────────────
+function epsGold(hv) {
+  const ei=9.84, wp=9.01, gam=0.072, AL=1.09, wL=2.75, gL=0.65;
+  const re = ei - wp*wp/(hv*hv+gam*gam) + AL*wL*wL*(wL*wL-hv*hv)/((wL*wL-hv*hv)**2+(gL*hv)**2);
+  const im = wp*wp*gam/(hv*(hv*hv+gam*gam)) + AL*wL*wL*gL*hv/((wL*wL-hv*hv)**2+(gL*hv)**2);
+  return [re, im];
+}
+function epsSilver(hv) {
+  const ei=3.70, wp=9.17, gam=0.021, AL=0.845, wL=4.0, gL=0.40;
+  const re = ei - wp*wp/(hv*hv+gam*gam) + AL*wL*wL*(wL*wL-hv*hv)/((wL*wL-hv*hv)**2+(gL*hv)**2);
+  const im = wp*wp*gam/(hv*(hv*hv+gam*gam)) + AL*wL*wL*gL*hv/((wL*wL-hv*hv)**2+(gL*hv)**2);
+  return [re, im];
+}
+function dzOblate(t) {
+  if (Math.abs(t-1)<1e-4) return 1/3;
+  const xi = Math.sqrt(1/t/t - 1);
+  return (1+xi*xi)/(xi*xi*xi) * (xi - Math.atan(xi));
+}
+function dzProlate(t) {
+  if (Math.abs(t-1)<1e-4) return 1/3;
+  const z = Math.sqrt(1 - 1/t/t);
+  return (1-z*z)/(z*z*z) * (0.5*Math.log((1+z)/(1-z)) - z);
+}
+function depolFactors(t) {
+  const dz = t<=1 ? dzOblate(t) : dzProlate(t);
+  return [dz, 0.5*(1-dz)];
+}
+function chiEllipsoid(hv, t, mat) {
+  const [epRe, epIm] = mat==='Au' ? epsGold(hv) : epsSilver(hv);
+  const [dz, dx] = depolFactors(t);
+  const chiRe = (epRe-1)/(4*Math.PI), chiIm = epIm/(4*Math.PI);
+  function div(cr, ci, dr, di) {
+    const D = dr*dr+di*di; return [(cr*dr+ci*di)/D, (ci*dr-cr*di)/D];
+  }
+  function chi_comp(d) {
+    const nr=1+4*Math.PI*chiRe*d, ni=4*Math.PI*chiIm*d;
+    return div(chiRe, chiIm, nr, ni);
+  }
+  const [xxr,xxi]=chi_comp(dx), [zzr,zzi]=chi_comp(dz);
+  return {xx:[xxr,xxi], zz:[zzr,zzi]};
+}
+function objF_single(hv, t, mat) {
+  const chi = chiEllipsoid(hv, t, mat);
+  const [xxr,xxi]=chi.xx, [zzr,zzi]=chi.zz;
+  const invXX_r = xxr/(xxr*xxr+xxi*xxi), invXX_i = -xxi/(xxr*xxr+xxi*xxi);
+  const invZZ_r = zzr/(zzr*zzr+zzi*zzi), invZZ_i = -zzi/(zzr*zzr+zzi*zzi);
+  const [k0] = [hv/197.3];
+  const gR = 0.05*Math.exp(-hv), gI = 0.03;
+  const dr = invXX_r + k0*k0*gR, di = invXX_i + k0*k0*gI;
+  const dr2 = invZZ_r + k0*k0*gR*0.7, di2 = invZZ_i + k0*k0*gI*0.7;
+  return Math.sqrt(dr*dr+di*di) * Math.sqrt(dr2*dr2+di2*di2);
+}
+
+const STEPS = [
+  // 0 ──────────────────────────────────────
+  {
+    tag: 'The big picture',
+    title: 'Why do we need plasmon-enhanced BLS?',
+    render: () => `
+    <div class="card">
+      <div class="section-title">The problem</div>
+      <p class="body-text">Brillouin Light Scattering (BLS) detects <strong>spin waves</strong> (magnons) in magnetic thin films by measuring the tiny frequency shift of photons that bounce off them. But two fundamental limitations make it hard:</p>
+      <div class="two-col" style="margin: .75rem 0;">
+        <div class="mini-card"><div class="lbl">Limitation 1</div><div class="val" style="font-size:15px; color: var(--color-text-danger)">Low wave-number limit</div><p style="font-size:12px; color:var(--color-text-secondary); margin-top:4px">Only spin waves with small k can be detected with free-space light</p></div>
+        <div class="mini-card"><div class="lbl">Limitation 2</div><div class="val" style="font-size:15px; color:var(--color-text-danger)">Low sensitivity</div><p style="font-size:12px; color:var(--color-text-secondary); margin-top:4px">Very few photons scatter inelastically — the BLS signal is faint</p></div>
+      </div>
+      <p class="body-text">The solution: put <strong>plasmonic nanoparticles</strong> on top of the magnetic film. They act as nanoscale antennas — concentrating the electromagnetic field at the film surface, boosting both problems at once.</p>
+    </div>
+    <div class="card">
+      <div class="section-title">The system (Fig. 1)</div>
+      <svg width="100%" viewBox="0 0 640 200">
+        <defs><marker id="ar0" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+        <rect x="40" y="130" width="560" height="40" rx="4" fill="#4a3b8a" opacity=".7"/>
+        <text x="320" y="155" text-anchor="middle" font-size="12" fill="#c9c2ff">GGG substrate  (ε₁ ≈ 3.78)</text>
+        <rect x="40" y="90" width="560" height="38" rx="4" fill="#2e6e44" opacity=".75"/>
+        <text x="320" y="113" text-anchor="middle" font-size="12" fill="#9fe8c2">YIG magnetic film  100 nm  (ε₂ ≈ 5.0)</text>
+        <rect x="40" y="50" width="560" height="38" rx="4" fill="${borderClr}"/>
+        <text x="320" y="73" text-anchor="middle" font-size="12" fill="${textClr}">Air  (ε₃ = 1)</text>
+        <ellipse cx="220" cy="44" rx="22" ry="10" fill="#D4A017" opacity=".9"/>
+        <ellipse cx="320" cy="44" rx="22" ry="10" fill="#D4A017" opacity=".9"/>
+        <ellipse cx="420" cy="44" rx="22" ry="10" fill="#D4A017" opacity=".9"/>
+        <text x="510" y="40" font-size="11" fill="${mutedClr}">Au nanoparticles</text>
+        <line x1="480" y1="42" x2="445" y2="44" stroke="${mutedClr}" stroke-width="0.8" marker-end="url(#ar0)"/>
+        <line x1="140" y1="10" x2="220" y2="44" stroke="#5ba3f5" stroke-width="1.5" marker-end="url(#ar0)"/>
+        <text x="100" y="10" font-size="11" fill="#5ba3f5">Laser (I)</text>
+        <line x1="220" y1="44" x2="140" y2="10" stroke="#f5895b" stroke-width="1.2" stroke-dasharray="3 2" marker-end="url(#ar0)"/>
+        <text x="60" y="22" font-size="10" fill="#f5895b">BLS (R)</text>
+      </svg>
+      <p class="body-text" style="margin-top:.5rem">The laser hits the nanoparticles → local field is amplified → more photon–magnon scattering → stronger BLS signal collected at detector.</p>
+    </div>
+    `,
+    afterRender: () => {}
+  },
+  // 1 ──────────────────────────────────────
+  {
+    tag: 'Method 1',
+    title: 'The Drude–Lorentz dielectric function ε(ω)',
+    render: () => `
+    <div class="card">
+      <div class="section-title">What is it?</div>
+      <p class="body-text">Everything starts here. The dielectric function ε(ω) tells you how a metal responds to light at each frequency. For Au and Ag it combines two physical mechanisms:</p>
+      <div class="two-col" style="margin:.6rem 0">
+        <div class="mini-card"><div class="lbl">Drude term</div><p style="font-size:13px;color:var(--color-text-secondary);margin-top:4px"><strong>Free electrons</strong> sloshing back and forth. Dominates at low energy.</p></div>
+        <div class="mini-card"><div class="lbl">Lorentz term</div><p style="font-size:13px;color:var(--color-text-secondary);margin-top:4px"><strong>Bound electrons</strong> resonating. Gives Au its golden color ~2.5 eV.</p></div>
+      </div>
+      <div class="eq-box">ε(ω) = ε<sub>∞</sub> − ω<sub>p</sub>² / (ω(ω + iγ))  +  A·ω<sub>L</sub>² / (ω<sub>L</sub>² − ω² − iγ<sub>L</sub>ω)</div>
+      <p class="body-text">Where ε<sub>∞</sub> = background polarization, ω<sub>p</sub> = plasma frequency, γ = damping. The imaginary part ε'' is <strong>loss</strong> — energy absorbed as heat. Key physics: Au has larger ε'' than Ag, so Ag makes a better plasmonic enhancer.</p>
+    </div>
+    <div class="card">
+      <div class="section-title">Interactive — ε(ω) for Au and Ag</div>
+      <div class="slider-row">
+        <label>Energy range</label>
+        <input type="range" id="s-emax" min="2.0" max="4.0" step="0.1" value="3.5" oninput="updateDrude()">
+        <span id="v-emax">3.5 eV</span>
+      </div>
+      <canvas id="chart-drude" height="220"></canvas>
+      <div style="margin-top:8px; display:flex; gap:16px; flex-wrap:wrap;">
+        <div class="legend-row"><div class="legend-dot" style="background:#D4A017"></div> Au  ε'</div>
+        <div class="legend-row"><div class="legend-dot" style="background:#D4A017; opacity:.45"></div> Au  ε''</div>
+        <div class="legend-row"><div class="legend-dot" style="background:#888"></div> Ag  ε'</div>
+        <div class="legend-row"><div class="legend-dot" style="background:#888; opacity:.45"></div> Ag  ε''</div>
+      </div>
+    </div>
+    `,
+    afterRender: () => {
+      const N=200;
+      function mk() {
+        const emax = parseFloat(document.getElementById('s-emax').value);
+        const hvs = Array.from({length:N}, (_,i)=>1.4+i*(emax-1.4)/(N-1));
+        const auR=[], auI=[], agR=[], agI=[];
+        hvs.forEach(h=>{const[r,i]=epsGold(h); auR.push(r); auI.push(i);});
+        hvs.forEach(h=>{const[r,i]=epsSilver(h); agR.push(r); agI.push(i);});
+        return {labels:hvs.map(v=>v.toFixed(2)), auR, auI, agR, agI};
+      }
+      function draw() {
+        const d = mk();
+        if (charts['drude']) { charts['drude'].destroy(); }
+        const ctx = document.getElementById('chart-drude').getContext('2d');
+        charts['drude'] = new Chart(ctx, { type:'line', data:{labels:d.labels, datasets:[
+          {label:'Au ε\'', data:d.auR, borderColor:'#D4A017', borderWidth:2, pointRadius:0, tension:.3},
+          {label:'Au ε\'\'', data:d.auI, borderColor:'#D4A017', borderWidth:1.5, borderDash:[4,3], pointRadius:0, tension:.3, borderDashOffset:0},
+          {label:'Ag ε\'', data:d.agR, borderColor:'#888', borderWidth:2, pointRadius:0, tension:.3},
+          {label:'Ag ε\'\'', data:d.agI, borderColor:'#888', borderWidth:1.5, borderDash:[4,3], pointRadius:0, tension:.3},
+        ]}, options:{animation:false, plugins:{legend:{display:false}}, scales:{
+          x:{title:{display:true,text:'ℏω (eV)'}, ticks:{maxTicksLimit:8}},
+          y:{title:{display:true,text:'ε'}, grid:{color:borderClr}}
+        }}});
+      }
+      window.updateDrude = () => {
+        document.getElementById('v-emax').textContent = parseFloat(document.getElementById('s-emax').value).toFixed(1)+' eV';
+        draw();
+      };
+      draw();
+    }
+  },
+  // 2 ──────────────────────────────────────
+  {
+    tag: 'Method 2',
+    title: 'Depolarization factors — shape of the nanoparticle',
+    render: () => `
+    <div class="card">
+      <div class="section-title">Why shape matters</div>
+      <p class="body-text">When an electric field is applied to an ellipsoidal nanoparticle, the charges inside create an opposing "depolarization" field. Its strength depends entirely on the particle's shape, captured by factors d<sub>x</sub>, d<sub>z</sub>.</p>
+      <div class="two-col" style="margin:.6rem 0">
+        <div class="mini-card"><div class="lbl">Oblate  (t &lt; 1, flat disk)</div><p style="font-size:12px;color:var(--color-text-secondary);margin-top:3px">Large d<sub>z</sub> → resonance shifts to lower energy</p></div>
+        <div class="mini-card"><div class="lbl">Prolate  (t &gt; 1, rod)</div><p style="font-size:12px;color:var(--color-text-secondary);margin-top:3px">Small d<sub>z</sub> → resonance shifts to higher energy</p></div>
+      </div>
+      <div class="eq-box">Oblate  (t=h<sub>z</sub>/h<sub>x</sub> ≤ 1):  d<sub>z</sub> = (1+ξ²)/ξ³ · (ξ − arctan ξ)
+Prolate (t &gt; 1):         d<sub>z</sub> = (1−ζ²)/ζ³ · (½ln((1+ζ)/(1−ζ)) − ζ)
+d<sub>x</sub> = d<sub>y</sub> = (1 − d<sub>z</sub>) / 2</div>
+      <p class="body-text">The eccentricity <strong>t = h<sub>z</sub>/h<sub>x</sub></strong> is the key tuning parameter in all the optimization maps of the paper. At t=1 you have a sphere, d<sub>z</sub>=d<sub>x</sub>=⅓.</p>
+    </div>
+    <div class="card">
+      <div class="section-title">Interactive — drag t to change shape</div>
+      <div class="slider-row">
+        <label>Eccentricity  t</label>
+        <input type="range" id="s-t" min="0.05" max="4.0" step="0.05" value="1.0" oninput="updateDepolViz()">
+        <span id="v-t">1.00</span>
+      </div>
+      <div style="display:flex; gap:12px; align-items:flex-start;">
+        <canvas id="chart-depol" height="200" style="flex:1"></canvas>
+        <div style="width:130px; flex-shrink:0;">
+          <svg id="shape-viz" width="130" height="200" viewBox="0 0 130 200">
+            <ellipse id="npe" cx="65" cy="100" rx="40" ry="40" fill="#D4A017" fill-opacity=".6" stroke="#D4A017" stroke-width="1.5"/>
+            <line x1="65" y1="30" x2="65" y2="170" stroke="${mutedClr}" stroke-width="0.5" stroke-dasharray="3 2"/>
+            <line x1="5" y1="100" x2="125" y2="100" stroke="${mutedClr}" stroke-width="0.5" stroke-dasharray="3 2"/>
+            <text id="npe-lbl" x="65" y="190" text-anchor="middle" font-size="11" fill="${mutedClr}">sphere (t=1)</text>
+          </svg>
+          <div class="mini-card" style="margin-top:8px">
+            <div class="lbl">d<sub>z</sub></div><div class="val" id="dz-val">0.333</div>
+            <div class="lbl" style="margin-top:6px">d<sub>x</sub></div><div class="val" id="dx-val">0.333</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    `,
+    afterRender: () => {
+      const ts = Array.from({length:300}, (_,i)=>0.05+i*3.95/299);
+      const dzArr=[], dxArr=[];
+      ts.forEach(t=>{ const[dz,dx]=depolFactors(t); dzArr.push(dz); dxArr.push(dx); });
+
+      if (charts['depol']) charts['depol'].destroy();
+      const ctx = document.getElementById('chart-depol').getContext('2d');
+      charts['depol'] = new Chart(ctx, { type:'line', data:{labels:ts.map(v=>v.toFixed(2)), datasets:[
+        {label:'dz', data:dzArr, borderColor:'#5ba3f5', borderWidth:2, pointRadius:0},
+        {label:'dx=dy', data:dxArr, borderColor:'#f5895b', borderWidth:2, pointRadius:0, borderDash:[4,3]},
+      ]}, options:{animation:false, plugins:{legend:{display:true, labels:{boxWidth:12, font:{size:11}}}},
+        scales:{x:{title:{display:true,text:'t = hz/hx'}, ticks:{maxTicksLimit:8}},
+                y:{title:{display:true,text:'depolarization factor d'}, max:1}}}});
+
+      window.updateDepolViz = () => {
+        const t = parseFloat(document.getElementById('s-t').value);
+        document.getElementById('v-t').textContent = t.toFixed(2);
+        const [dz,dx]=depolFactors(t);
+        document.getElementById('dz-val').textContent = dz.toFixed(3);
+        document.getElementById('dx-val').textContent = dx.toFixed(3);
+        const hx=40, hz=Math.max(5,Math.min(95, t*40));
+        document.getElementById('npe').setAttribute('rx', hx);
+        document.getElementById('npe').setAttribute('ry', hz);
+        const lbl = t<0.9?'oblate (disk)':t>1.1?'prolate (rod)':'sphere (t=1)';
+        document.getElementById('npe-lbl').textContent = lbl;
+      };
+    }
+  },
+  // 3 ──────────────────────────────────────
+  {
+    tag: 'Method 3',
+    title: 'Effective susceptibility χ̃(ω) — how one nanoparticle responds',
+    render: () => `
+    <div class="card">
+      <div class="section-title">The key formula (Eq. A1 / A5–A8)</div>
+      <p class="body-text">The "effective susceptibility" χ tells you: for a given incident field, how large is the oscillating dipole moment of the nanoparticle? Larger χ → stronger local field → stronger BLS signal.</p>
+      <p class="body-text" style="margin-top:.6rem">For an ellipsoidal particle <strong>in air</strong> (Eq. A1):</p>
+      <div class="eq-box">χ<sup>(el)</sup><sub>ii</sub>(ω) = χ<sup>(pl)</sup>(ω) / [ 1 + 4π χ<sup>(pl)</sup>(ω) d<sub>i</sub> ]</div>
+      <p class="body-text">When the particle sits <strong>on the YIG film</strong>, the film surface creates an image dipole that modifies the response (Eqs. A5–A8):</p>
+      <div class="eq-box">χ̃<sub>xx</sub> = ε₃ V<sub>p</sub> (ε<sub>p</sub>−ε₃) / [ε₃ + (ε<sub>p</sub>−ε₃)d<sub>x</sub>] · L<sub>‖</sub>
+L<sub>‖</sub> = [ 1 + (ε₃−ε₂)(ε<sub>p</sub>−ε₃) / (3(ε₃+ε₂)·denom) · ϑ ]⁻¹</div>
+      <p class="body-text">The denominator goes to zero near <strong>plasmon resonance</strong> — that's where χ blows up and the local field is maximum.</p>
+    </div>
+    <div class="card">
+      <div class="section-title">Interactive — |χ(ω)| vs photon energy</div>
+      <div class="slider-row">
+        <label>Eccentricity  t</label>
+        <input type="range" id="s-tchi" min="0.1" max="3.0" step="0.05" value="0.5" oninput="updateChi()">
+        <span id="v-tchi">0.50</span>
+      </div>
+      <div style="margin:.4rem 0; display:flex; gap:8px; flex-wrap:wrap;">
+        <label style="font-size:13px;color:var(--color-text-secondary);display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="mat" value="Au" checked onchange="updateChi()"> Au</label>
+        <label style="font-size:13px;color:var(--color-text-secondary);display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="mat" value="Ag" onchange="updateChi()"> Ag</label>
+      </div>
+      <canvas id="chart-chi" height="220"></canvas>
+      <div style="margin-top:6px; display:flex; gap:16px; flex-wrap:wrap;">
+        <div class="legend-row"><div class="legend-dot" style="background:#5ba3f5"></div>|χ<sub>xx</sub>| (in-plane)</div>
+        <div class="legend-row"><div class="legend-dot" style="background:#f5895b"></div>|χ<sub>zz</sub>| (out-of-plane)</div>
+      </div>
+    </div>
+    `,
+    afterRender: () => {
+      function drawChi() {
+        const t = parseFloat(document.getElementById('s-tchi').value);
+        const mat = document.querySelector('input[name="mat"]:checked').value;
+        const N=200;
+        const hvs = Array.from({length:N},(_,i)=>1.4+i*2.1/(N-1));
+        const xxArr=[], zzArr=[];
+        const [dz,dx]=depolFactors(t);
+        hvs.forEach(hv=>{
+          const [epR,epI] = mat==='Au'?epsGold(hv):epsSilver(hv);
+          const chiR=(epR-1)/(4*Math.PI), chiI=epI/(4*Math.PI);
+          function mag(cr,ci,d){const nr=1+4*Math.PI*chiR*d, ni=4*Math.PI*chiI*d; const D=nr*nr+ni*ni; return Math.sqrt(((cr*nr+ci*ni)/D)**2+((ci*nr-cr*ni)/D)**2);}
+          xxArr.push(mag(chiR,chiI,dx));
+          zzArr.push(mag(chiR,chiI,dz));
+        });
+        if(charts['chi']) charts['chi'].destroy();
+        const ctx=document.getElementById('chart-chi').getContext('2d');
+        charts['chi']=new Chart(ctx,{type:'line',data:{labels:hvs.map(v=>v.toFixed(2)),datasets:[
+          {label:'|χxx|',data:xxArr,borderColor:'#5ba3f5',borderWidth:2,pointRadius:0,tension:.3},
+          {label:'|χzz|',data:zzArr,borderColor:'#f5895b',borderWidth:2,pointRadius:0,tension:.3},
+        ]},options:{animation:false,plugins:{legend:{display:false}},scales:{
+          x:{title:{display:true,text:'ℏω (eV)'},ticks:{maxTicksLimit:8}},
+          y:{title:{display:true,text:'|χ| (arb.)'},grid:{color:borderClr}}
+        }}});
+      }
+      window.updateChi=()=>{document.getElementById('v-tchi').textContent=parseFloat(document.getElementById('s-tchi').value).toFixed(2); drawChi();};
+      drawChi();
+    }
+  },
+  // 4 ──────────────────────────────────────
+  {
+    tag: 'Method 4',
+    title: 'The BLS enhancement mechanism (Eqs. 1–10)',
+    render: () => `
+    <div class="card">
+      <div class="section-title">How plasmons boost BLS — two channels</div>
+      <p class="body-text">The total enhanced BLS field has two additive contributions (Eq. 10). Both act simultaneously and both are driven by reaching the maximum of χ̃:</p>
+      <div class="diagram-wrap">
+        <svg width="100%" viewBox="0 0 640 230">
+          <defs><marker id="ar4" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+          <rect x="10" y="10" width="130" height="44" rx="8" fill="${bg2}" stroke="${borderClr}"/>
+          <text x="75" y="28" text-anchor="middle" font-size="12" fill="${textClr}" font-weight="500">Incident laser</text>
+          <text x="75" y="46" text-anchor="middle" font-size="11" fill="${mutedClr}">E₀(ω)</text>
+
+          <rect x="240" y="10" width="155" height="44" rx="8" fill="${bg2}" stroke="${borderClr}"/>
+          <text x="317" y="30" text-anchor="middle" font-size="12" fill="${textClr}" font-weight="500">Plasmon nanostructure</text>
+          <text x="317" y="46" text-anchor="middle" font-size="11" fill="${mutedClr}">amplifies local field</text>
+
+          <rect x="500" y="10" width="130" height="44" rx="8" fill="${bg2}" stroke="${borderClr}"/>
+          <text x="565" y="28" text-anchor="middle" font-size="12" fill="${textClr}" font-weight="500">YIG film</text>
+          <text x="565" y="46" text-anchor="middle" font-size="11" fill="${mutedClr}">photon–magnon</text>
+
+          <line x1="140" y1="32" x2="238" y2="32" stroke="${mutedClr}" stroke-width="1" marker-end="url(#ar4)"/>
+          <line x1="395" y1="32" x2="498" y2="32" stroke="${mutedClr}" stroke-width="1" marker-end="url(#ar4)"/>
+
+          <rect x="10" y="120" width="195" height="52" rx="8" fill="#1a3a5c" stroke="#3b6ba5"/>
+          <text x="107" y="140" text-anchor="middle" font-size="12" fill="#9fd3f7" font-weight="500">Channel 1</text>
+          <text x="107" y="157" text-anchor="middle" font-size="11" fill="#6ab6e8">Enhanced field → bigger</text>
+          <text x="107" y="171" text-anchor="middle" font-size="11" fill="#6ab6e8">oscillating dipole P</text>
+
+          <rect x="435" y="120" width="195" height="52" rx="8" fill="#1a3a2c" stroke="#3b8a6a"/>
+          <text x="532" y="140" text-anchor="middle" font-size="12" fill="#9fe8c2" font-weight="500">Channel 2</text>
+          <text x="532" y="157" text-anchor="middle" font-size="11" fill="#6ac8a0">BLS field itself gets</text>
+          <text x="532" y="171" text-anchor="middle" font-size="11" fill="#6ac8a0">re-enhanced by plasmon</text>
+
+          <rect x="220" y="185" width="200" height="38" rx="8" fill="#2a1a3a" stroke="#6a3a8a"/>
+          <text x="320" y="208" text-anchor="middle" font-size="12" fill="#c9a8f0" font-weight="500">Total enhanced BLS = Ch.1 + Ch.2</text>
+
+          <line x1="107" y1="172" x2="280" y2="185" stroke="${mutedClr}" stroke-width="0.8" marker-end="url(#ar4)"/>
+          <line x1="532" y1="172" x2="360" y2="185" stroke="${mutedClr}" stroke-width="0.8" marker-end="url(#ar4)"/>
+        </svg>
+      </div>
+      <p class="body-text">Both channels scale with the magnitude of χ̃. So <strong>finding conditions where χ̃ is maximum = finding conditions where BLS is most enhanced</strong>. That is exactly what the objective function F(ω) measures.</p>
+    </div>
+    <div class="card">
+      <div class="section-title">The polarization P of the magnetic film (Eq. 1)</div>
+      <div class="eq-box">P<sub>i</sub>(R, ω±Ω) = (1/4π) ε₀ χ<sub>ij</sub>(R,Ω) · E<sub>j</sub>(R,ω)
+χ<sub>ij</sub> is the magneto-optical susceptibility (Kerr effect)
+Ω = magnon frequency  →  tiny frequency shift of BLS photon</div>
+      <p class="body-text">The local field E<sub>j</sub> now has the plasmon's enhanced component added to it, so P — and therefore the BLS signal — is directly proportional to the local field enhancement.</p>
+    </div>
+    `,
+    afterRender: () => {}
+  },
+  // 5 ──────────────────────────────────────
+  {
+    tag: 'Method 5',
+    title: 'The objective function F(ω) — finding resonance',
+    render: () => `
+    <div class="card">
+      <div class="section-title">What does the paper actually optimize?</div>
+      <p class="body-text">BLS enhancement is maximum when χ̃(ω) is maximum, which happens when its <strong>denominator is minimum</strong>. The paper defines the objective function F(ω) as the absolute value of that denominator (Eqs. 13–14):</p>
+      <div class="eq-box">Single nanoparticle (Eq. 13):
+  F(ω) = |Det{ [χ<sup>(el)</sup>(ω)]⁻¹ + k₀² ∫ G<sup>(33)</sup> dr }|
+
+Submonolayer (Eq. 14):
+  F(ω) = |Det{ [χ̃(ω)]⁻¹ + n k₀² G<sup>(33)</sup>(k, d, d, ω) }|</div>
+      <p class="body-text">Smaller F → closer to plasmon resonance → stronger BLS enhancement. The paper sweeps over <strong>photon energy ℏω</strong> and <strong>eccentricity t</strong> to make optimization maps. Black contour lines mark F &lt; threshold.</p>
+    </div>
+    <div class="card">
+      <div class="section-title">Interactive — F(ω) vs photon energy for different t</div>
+      <div class="slider-row">
+        <label>Eccentricity  t</label>
+        <input type="range" id="s-tf" min="0.1" max="3.0" step="0.05" value="0.5" oninput="updateF()">
+        <span id="v-tf">0.50</span>
+      </div>
+      <div style="margin:.4rem 0; display:flex; gap:8px; flex-wrap:wrap;">
+        <label style="font-size:13px;color:var(--color-text-secondary);display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="matf" value="Au" checked onchange="updateF()"> Au</label>
+        <label style="font-size:13px;color:var(--color-text-secondary);display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="matf" value="Ag" onchange="updateF()"> Ag</label>
+      </div>
+      <canvas id="chart-f" height="210"></canvas>
+      <div style="margin-top:.5rem; display:flex; gap:8px; flex-wrap:wrap;">
+        <div class="mini-card" style="flex:1"><div class="lbl">Min F</div><div class="val" id="fmin-val">—</div></div>
+        <div class="mini-card" style="flex:1"><div class="lbl">Energy at min</div><div class="val" id="fmin-e">—</div></div>
+      </div>
+      <p class="body-text" style="margin-top:.6rem; font-size:13px">The dip in F is the <strong>plasmon resonance</strong>. Moving t shifts the resonance energy — this is the physical basis for the optimization maps (Figs. 5–16).</p>
+    </div>
+    `,
+    afterRender: () => {
+      function drawF() {
+        const t=parseFloat(document.getElementById('s-tf').value);
+        const mat=document.querySelector('input[name="matf"]:checked').value;
+        const N=250; const hvs=Array.from({length:N},(_,i)=>1.4+i*2.1/(N-1));
+        const Farr=hvs.map(hv=>objF_single(hv,t,mat));
+        const Fmax=Math.max(...Farr)||1;
+        const Fnorm=Farr.map(v=>v/Fmax);
+        const minVal=Math.min(...Fnorm);
+        const minIdx=Fnorm.indexOf(minVal);
+        document.getElementById('fmin-val').textContent=minVal.toFixed(3);
+        document.getElementById('fmin-e').textContent=hvs[minIdx].toFixed(2)+' eV';
+        if(charts['f']) charts['f'].destroy();
+        const ctx=document.getElementById('chart-f').getContext('2d');
+        charts['f']=new Chart(ctx,{type:'line',data:{labels:hvs.map(v=>v.toFixed(2)),datasets:[
+          {label:'F(ω)',data:Fnorm,borderColor:'#5ba3f5',borderWidth:2,pointRadius:0,tension:.3,fill:true,backgroundColor:'rgba(91,163,245,0.08)'},
+        ]},options:{animation:false,plugins:{legend:{display:false},annotation:{}},scales:{
+          x:{title:{display:true,text:'ℏω (eV)'},ticks:{maxTicksLimit:8}},
+          y:{title:{display:true,text:'F(ω) normalised'},min:0,max:1,grid:{color:borderClr}}
+        }}});
+      }
+      window.updateF=()=>{document.getElementById('v-tf').textContent=parseFloat(document.getElementById('s-tf').value).toFixed(2); drawF();};
+      drawF();
+    }
+  },
+  // 6 ──────────────────────────────────────
+  {
+    tag: 'Simulation 1',
+    title: 'Optimization map — single nanoparticle (Figs. 5 & 6)',
+    render: () => `
+    <div class="card">
+      <div class="section-title">What does a 2D optimization map show?</div>
+      <p class="body-text">The paper sweeps both axes simultaneously: x = eccentricity t, y = photon energy ℏω. At each point they compute F(ω). <strong>Dark = small F = near resonance = best BLS enhancement</strong>. The black contour shows F &lt; threshold.</p>
+    </div>
+    <div class="card">
+      <div class="section-title">Interactive — build your own optimization map</div>
+      <div class="slider-row">
+        <label>Resolution</label>
+        <input type="range" id="s-res" min="20" max="60" step="5" value="30" oninput="document.getElementById('v-res').textContent=this.value+'×'+this.value">
+        <span id="v-res">30×30</span>
+      </div>
+      <div style="margin:.4rem 0; display:flex; gap:8px; flex-wrap:wrap;">
+        <label style="font-size:13px;color:var(--color-text-secondary);display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="mat-map" value="Au" checked> Au (Fig. 5)</label>
+        <label style="font-size:13px;color:var(--color-text-secondary);display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="mat-map" value="Ag"> Ag (Fig. 6)</label>
+      </div>
+      <button onclick="runMap()" style="margin-bottom:.75rem; font-size:13px; padding:7px 16px; border-radius:var(--border-radius-md); border:0.5px solid var(--color-border-secondary); background:var(--color-background-info); color:var(--color-text-info); cursor:pointer;">Compute map ↗</button>
+      <canvas id="chart-map" height="280"></canvas>
+      <p class="body-text" style="margin-top:.6rem; font-size:13px">Paper conclusion: for ℏω &gt; 2.5 eV → Ag is optimal. For 1.5–2.3 eV → flat Au particles (small t) are best.</p>
+    </div>
+    `,
+    afterRender: () => {
+      window.runMap = () => {
+        const N=parseInt(document.getElementById('s-res').value);
+        const mat=document.querySelector('input[name="mat-map"]:checked').value;
+        const ts=Array.from({length:N},(_,i)=>0.1+i*3.4/(N-1));
+        const hvs=Array.from({length:N},(_,i)=>1.4+i*2.1/(N-1));
+        const data=[];
+        let maxF=0;
+        const raw=[];
+        hvs.forEach(hv=>{ const row=[]; ts.forEach(t=>{ const v=objF_single(hv,t,mat); row.push(v); if(v>maxF)maxF=v; }); raw.push(row); });
+        const threshold = mat==='Au' ? 0.005 : 0.001;
+        ts.forEach((t,j)=>{ hvs.forEach((hv,i)=>{ const v=raw[i][j]/maxF; data.push({x:t.toFixed(2),y:hv.toFixed(2),v:v}); }); });
+        if(charts['map']) charts['map'].destroy();
+        const ctx=document.getElementById('chart-map').getContext('2d');
+        const pal = isDark ? ['#3a2200','#7a4400','#b37300','#D4A017','#e8d06a','#f5edbb'] : ['#f5edbb','#e8d06a','#D4A017','#b37300','#7a4400','#3a2200'];
+        function valToColor(v) {
+          const idx=Math.min(pal.length-1, Math.floor(v*(pal.length)));
+          return pal[idx];
+        }
+        const datasets=ts.map((t,j)=>({
+          label:t.toFixed(2),
+          data:hvs.map((hv,i)=>({x:parseFloat(hv.toFixed(2)),y:raw[i][j]/maxF})),
+          borderColor: ts.map((_,jj)=>jj===j?'rgba(0,0,0,0.1)':'transparent')[j],
+          borderWidth:0, pointRadius:0, showLine:false
+        }));
+        charts['map']=new Chart(ctx,{type:'scatter',data:{datasets:[{
+          label:'F(ω)',
+          data: hvs.flatMap((hv,i)=>ts.map((t,j)=>({x:t,y:hv,v:raw[i][j]/maxF}))),
+          pointRadius: Math.max(3,Math.floor(280/N)),
+          pointStyle:'rect',
+          backgroundColor: hvs.flatMap((hv,i)=>ts.map((t,j)=>valToColor(raw[i][j]/maxF))),
+          borderWidth:0
+        }]},options:{animation:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:p=>`t=${p.raw.x}  ℏω=${p.raw.y} eV  F=${(p.raw.v||0).toFixed(3)}`}}},scales:{
+          x:{title:{display:true,text:'Eccentricity  t = hz/hx'},min:0.1,max:3.5},
+          y:{title:{display:true,text:'ℏω (eV)'},min:1.4,max:3.5}
+        }}});
+      };
+      window.runMap();
+    }
+  },
+  // 7 ──────────────────────────────────────
+  {
+    tag: 'Simulation 2',
+    title: 'Two plasmon structures — which works better?',
+    render: () => `
+    <div class="card">
+      <div class="section-title">Single nano-object vs submonolayer</div>
+      <div class="two-col">
+        <div class="mini-card">
+          <div class="lbl"><span class="tag">Type 1</span></div>
+          <p style="font-size:13px;color:var(--color-text-secondary);margin-top:4px"><strong>Single nanoparticles</strong> or sandwich structures (metal–spacer–metal). Localized plasmon resonance. Strong, controllable enhancement.</p>
+        </div>
+        <div class="mini-card">
+          <div class="lbl"><span class="tag amber">Type 2</span></div>
+          <p style="font-size:13px;color:var(--color-text-secondary);margin-top:4px"><strong>Submonolayer</strong> — full surface coating. Collective surface plasmon resonance. BUT: surface plasmons are evanescent waves...</p>
+        </div>
+      </div>
+      <p class="body-text" style="margin-top:.75rem"><strong>The key problem with the submonolayer</strong>: a surface plasmon must be an evanescent wave (field decays exponentially away from surface). But the BLS signal must propagate to the detector. These two requirements are <em>mutually exclusive</em> in backscattering geometry.</p>
+      <div class="eq-box">BLS propagates if:  κ = √(k̄₀² − k‖²) is real
+Surface plasmon exists if:  √(k̄₀² − k‖²) is imaginary
+→ These cannot both hold simultaneously!</div>
+      <p class="body-text">Result (paper conclusion): <strong>single nano-objects are better</strong> — they support localized plasmon resonance without needing evanescent wave coupling.</p>
+    </div>
+    <div class="card">
+      <div class="section-title">Interactive — compare F for single vs submonolayer</div>
+      <div class="slider-row">
+        <label>Eccentricity  t</label>
+        <input type="range" id="s-comp" min="0.1" max="3.0" step="0.05" value="0.5" oninput="updateComp()">
+        <span id="v-comp">0.50</span>
+      </div>
+      <div class="slider-row">
+        <label>Angle  θ</label>
+        <input type="range" id="s-ang" min="0" max="70" step="5" value="10" oninput="updateComp()">
+        <span id="v-ang">10°</span>
+      </div>
+      <canvas id="chart-comp" height="220"></canvas>
+      <div style="margin-top:8px; display:flex; gap:16px; flex-wrap:wrap;">
+        <div class="legend-row"><div class="legend-dot" style="background:#5ba3f5"></div>Single nanoparticle</div>
+        <div class="legend-row"><div class="legend-dot" style="background:#f5895b"></div>Submonolayer</div>
+      </div>
+      <p class="body-text" style="font-size:13px; margin-top:.5rem">Note how the submonolayer's F curve is slightly higher (worse) than the single-particle — the collective mode cannot be fully resonant.</p>
+    </div>
+    `,
+    afterRender: () => {
+      function drawComp() {
+        const t=parseFloat(document.getElementById('s-comp').value);
+        const ang=parseFloat(document.getElementById('s-ang').value);
+        const N=200; const hvs=Array.from({length:N},(_,i)=>1.4+i*2.1/(N-1));
+        const Fs=[], Fsub=[];
+        const kfact=Math.sin(ang*Math.PI/180);
+        hvs.forEach(hv=>{
+          const v1=objF_single(hv,t,'Au');
+          Fs.push(v1);
+          const [dz,dx]=depolFactors(t);
+          const [epR,epI]=epsGold(hv);
+          const chiR=(epR-1)/(4*Math.PI), chiI=epI/(4*Math.PI);
+          const n=1e-3;
+          const k0=hv/197.3;
+          const kpar=k0*kfact;
+          const gMod=0.04*(1+0.3*kfact*kfact);
+          const nr=1+4*Math.PI*chiR*dx, ni=4*Math.PI*chiI*dx;
+          const D=nr*nr+ni*ni;
+          const invR=nr/D, invI=-ni/D;
+          const dr=invR+n*k0*k0*gMod, di=invI+0.03*n*k0*k0;
+          Fsub.push(Math.sqrt(dr*dr+di*di));
+        });
+        const mx=Math.max(...Fs,...Fsub)||1;
+        if(charts['comp']) charts['comp'].destroy();
+        const ctx=document.getElementById('chart-comp').getContext('2d');
+        charts['comp']=new Chart(ctx,{type:'line',data:{labels:hvs.map(v=>v.toFixed(2)),datasets:[
+          {label:'Single',data:Fs.map(v=>v/mx),borderColor:'#5ba3f5',borderWidth:2,pointRadius:0,tension:.3},
+          {label:'Submonolayer',data:Fsub.map(v=>v/mx),borderColor:'#f5895b',borderWidth:2,pointRadius:0,tension:.3,borderDash:[5,3]},
+        ]},options:{animation:false,plugins:{legend:{display:false}},scales:{
+          x:{title:{display:true,text:'ℏω (eV)'},ticks:{maxTicksLimit:8}},
+          y:{title:{display:true,text:'F(ω) normalised'},min:0,max:1,grid:{color:borderClr}}
+        }}});
+      }
+      window.updateComp=()=>{
+        document.getElementById('v-comp').textContent=parseFloat(document.getElementById('s-comp').value).toFixed(2);
+        document.getElementById('v-ang').textContent=parseFloat(document.getElementById('s-ang').value).toFixed(0)+'°';
+        drawComp();
+      };
+      drawComp();
+    }
+  },
+  // 8 ──────────────────────────────────────
+  {
+    tag: 'Key results',
+    title: 'Summary — what the paper finds',
+    render: () => `
+    <div class="card">
+      <div class="section-title">Material choice</div>
+      <div class="two-col">
+        <div class="mini-card"><div class="lbl"><span class="tag">Au</span> best for</div><p style="font-size:13px;color:var(--color-text-secondary);margin-top:4px">1.5–2.3 eV (visible red–green). Use <strong>flat oblate</strong> particles (small t).</p></div>
+        <div class="mini-card"><div class="lbl"><span class="tag amber">Ag</span> best for</div><p style="font-size:13px;color:var(--color-text-secondary);margin-top:4px">&gt; 2.5 eV (green–UV). Smaller ε'' → less loss → better resonance quality.</p></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="section-title">Nanoparticle shape — eccentricity is the dominant parameter</div>
+      <p class="body-text">The paper's most important finding: <strong>the eccentricity t controls everything</strong>. By tuning t you shift the plasmon resonance energy to match your laser wavelength. This is shown in Figs. 5–6: each row of the map is a different t, each column is a different ℏω.</p>
+    </div>
+    <div class="card">
+      <div class="section-title">Sandwich (complex) structures — Figs. 9 & 10</div>
+      <p class="body-text">Adding a dielectric spacer between two metal particles gives an extra tuning parameter (spacer eccentricity t<sub>s</sub>). For Au: enhancement occurs when t<sub>Au</sub> ≈ 0.5 and t<sub>s</sub> ≈ 0.5. For Ag: two narrow parameter windows exist — more restrictive but potentially stronger.</p>
+    </div>
+    <div class="card">
+      <div class="section-title">Polarization &amp; angle dependence — Figs. 12–17</div>
+      <div class="two-col">
+        <div class="mini-card"><div class="lbl">p-polarized</div><p style="font-size:12px;color:var(--color-text-secondary);margin-top:3px">Wider range of enhancement conditions. Preferred for experiments.</p></div>
+        <div class="mini-card"><div class="lbl">Angle θ</div><p style="font-size:12px;color:var(--color-text-secondary);margin-top:3px">Non-monotonic: up to ~30° improves, beyond 60° slightly reduces. Use θ ≈ 10–30°.</p></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="section-title">Practical roadmap</div>
+      <ol style="font-size:14px; color:var(--color-text-secondary); line-height:2; padding-left:1.2rem;">
+        <li>Choose material: <strong>Au</strong> for red laser, <strong>Ag</strong> for green/blue</li>
+        <li>Read your t from the optimization map for your ℏω</li>
+        <li>Fabricate ellipsoidal nanoparticles with that aspect ratio on YIG</li>
+        <li>Use a single nano-object or sparse array (not full coating)</li>
+        <li>Use p-polarized light, θ ≈ 10–30°</li>
+        <li>Validate experimentally — heating effects need to be checked</li>
+      </ol>
+    </div>
+    `,
+    afterRender: () => {}
+  }
+];
+
+function renderStep(i) {
+  currentStep = i;
+  const s = STEPS[i];
+
+  const dotsEl = document.getElementById('dots');
+  dotsEl.innerHTML = STEPS.map((_,j)=>`<div class="dot ${j===i?'active':j<i?'done':''}" onclick="renderStep(${j})"></div>`).join('');
+
+  const panel = document.getElementById('panel');
+  panel.innerHTML = `
+    <div class="card" style="border-left: 3px solid var(--color-border-info); border-radius: var(--border-radius-lg);">
+      <div class="section-title">${s.tag}</div>
+      <div class="main-title">${s.title}</div>
+    </div>
+    ${s.render()}
+    <div class="nav">
+      <button onclick="renderStep(${i-1})" ${i===0?'disabled style="opacity:.4"':''}>← Previous</button>
+      <span class="counter">${i+1} / ${STEPS.length}</span>
+      ${i===STEPS.length-1
+        ? `<button class="primary" onclick="sendPrompt('I have finished the tutorial. Can you quiz me on the plasmon-enhanced BLS methods?')">Take quiz ↗</button>`
+        : `<button class="primary" onclick="renderStep(${i+1})">Next →</button>`
+      }
+    </div>
+  `;
+  setTimeout(()=>s.afterRender(), 50);
+}
+
+renderStep(0);
+</script>

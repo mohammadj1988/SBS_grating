@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mohammad Jafari — Laser Physicist & Researcher</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,900;1,400;1,700&family=DM+Mono:ital,wght@0,300;0,400;1,300&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c10;
+    --surface: #10141c;
+    --surface2: #161c28;
+    --border: rgba(100, 160, 255, 0.12);
+    --accent: #4fa3e0;
+    --accent2: #7ecaff;
+    --accent3: #c8a96e;
+    --gold: #d4a853;
+    --text: #e8edf5;
+    --text-dim: #8a97b0;
+    --text-muted: #4a5568;
+    --glow: rgba(79, 163, 224, 0.15);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Libre Baskerville', Georgia, serif;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* ── CANVAS BG ── */
+  #canvas-bg {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.35;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.2rem 4rem;
+    background: rgba(10, 12, 16, 0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav-logo {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.25em;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 2.5rem;
+    list-style: none;
+  }
+
+  .nav-links a {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.15em;
+    color: var(--text-dim);
+    text-decoration: none;
+    text-transform: uppercase;
+    transition: color 0.2s;
+    position: relative;
+  }
+
+  .nav-links a::after {
+    content: '';
+    position: absolute;
+    bottom: -4px; left: 0;
+    width: 0; height: 1px;
+    background: var(--accent);
+    transition: width 0.3s;
+  }
+
+  .nav-links a:hover { color: var(--accent); }
+  .nav-links a:hover::after { width: 100%; }
+
+  /* ── HERO ── */
+  #hero {
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    padding: 0 8rem;
+    gap: 4rem;
+  }
+
+  .hero-left { padding-top: 5rem; }
+
+  .hero-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .hero-tag::before {
+    content: '';
+    display: inline-block;
+    width: 2rem;
+    height: 1px;
+    background: var(--accent);
+  }
+
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.8rem, 5vw, 4.5rem);
+    font-weight: 900;
+    line-height: 1.05;
+    color: var(--text);
+    margin-bottom: 0.3rem;
+  }
+
+  h1 em {
+    font-style: italic;
+    color: var(--accent2);
+  }
+
+  .hero-subtitle {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.05rem;
+    font-style: italic;
+    color: var(--gold);
+    margin-bottom: 1.8rem;
+    letter-spacing: 0.02em;
+  }
+
+  .hero-desc {
+    font-size: 0.98rem;
+    color: var(--text-dim);
+    max-width: 500px;
+    line-height: 1.85;
+    margin-bottom: 2.5rem;
+  }
+
+  .hero-ctas {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .btn-primary {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: var(--bg);
+    background: var(--accent);
+    padding: 0.9rem 2rem;
+    border: 1px solid var(--accent);
+    transition: all 0.25s;
+  }
+
+  .btn-primary:hover {
+    background: var(--accent2);
+    border-color: var(--accent2);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(79, 163, 224, 0.3);
+  }
+
+  .btn-secondary {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: var(--accent);
+    background: transparent;
+    padding: 0.9rem 2rem;
+    border: 1px solid var(--border);
+    transition: all 0.25s;
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--accent);
+    background: var(--glow);
+    transform: translateY(-2px);
+  }
+
+  /* Hero Right — Spec Card */
+  .hero-right { padding-top: 5rem; }
+
+  .spec-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 2.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .spec-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  }
+
+  .spec-card-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.3em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 1.8rem;
+  }
+
+  .spec-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border);
+    gap: 1rem;
+  }
+
+  .spec-row:last-child { border-bottom: none; }
+
+  .spec-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+
+  .spec-value {
+    font-size: 0.88rem;
+    color: var(--text-dim);
+    text-align: right;
+  }
+
+  .spec-value strong {
+    color: var(--text);
+    font-weight: 700;
+  }
+
+  /* ── SECTIONS ── */
+  section {
+    position: relative;
+    z-index: 1;
+    padding: 7rem 8rem;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 4rem;
+  }
+
+  .section-number {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.3em;
+    color: var(--accent);
+    opacity: 0.6;
+  }
+
+  h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.8rem, 3vw, 2.6rem);
+    font-weight: 900;
+    color: var(--text);
+    line-height: 1.1;
+  }
+
+  .section-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── RESEARCH ── */
+  #research { background: var(--bg); }
+
+  .research-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.5px;
+    background: var(--border);
+    border: 1px solid var(--border);
+  }
+
+  .research-card {
+    background: var(--surface);
+    padding: 2.5rem;
+    transition: background 0.25s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .research-card:hover { background: var(--surface2); }
+
+  .research-icon {
+    font-size: 2rem;
+    margin-bottom: 1.2rem;
+    display: block;
+  }
+
+  .research-card h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 0.75rem;
+    line-height: 1.3;
+  }
+
+  .research-card p {
+    font-size: 0.88rem;
+    color: var(--text-dim);
+    line-height: 1.75;
+  }
+
+  .research-card .tag {
+    display: inline-block;
+    margin-top: 1.2rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border: 1px solid var(--border);
+    padding: 0.3rem 0.7rem;
+  }
+
+  /* ── EXPERIENCE ── */
+  #experience { background: var(--surface); }
+
+  .timeline {
+    position: relative;
+    padding-left: 3rem;
+  }
+
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0.5rem; bottom: 0;
+    width: 1px;
+    background: linear-gradient(to bottom, var(--accent), transparent);
+  }
+
+  .timeline-item {
+    position: relative;
+    margin-bottom: 3.5rem;
+    padding-left: 1.5rem;
+  }
+
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -3.4rem;
+    top: 0.55rem;
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    box-shadow: 0 0 12px var(--accent);
+  }
+
+  .timeline-date {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+
+  .timeline-role {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 0.25rem;
+  }
+
+  .timeline-org {
+    font-size: 0.88rem;
+    color: var(--gold);
+    font-style: italic;
+    margin-bottom: 0.8rem;
+  }
+
+  .timeline-desc {
+    font-size: 0.88rem;
+    color: var(--text-dim);
+    line-height: 1.8;
+  }
+
+  .timeline-desc ul {
+    list-style: none;
+    margin-top: 0.5rem;
+  }
+
+  .timeline-desc li::before {
+    content: '→ ';
+    color: var(--accent);
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* ── SKILLS ── */
+  #skills { background: var(--bg); }
+
+  .skills-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+  }
+
+  .skill-group { }
+
+  .skill-group-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 1.2rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .skill-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.8rem;
+  }
+
+  .skill-name {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+  }
+
+  .skill-bar {
+    width: 100px;
+    height: 3px;
+    background: var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .skill-fill {
+    position: absolute;
+    top: 0; left: 0;
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* ── PUBLICATIONS ── */
+  #publications { background: var(--surface); }
+
+  .pub-list { display: flex; flex-direction: column; gap: 1.5px; }
+
+  .pub-item {
+    background: var(--bg);
+    padding: 2rem 2.5rem;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 2rem;
+    align-items: start;
+    border-left: 2px solid transparent;
+    transition: border-color 0.25s, background 0.25s;
+  }
+
+  .pub-item:hover {
+    border-left-color: var(--accent);
+    background: var(--surface2);
+  }
+
+  .pub-year {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+    padding-top: 0.2rem;
+    min-width: 3rem;
+  }
+
+  .pub-content {}
+
+  .pub-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 0.4rem;
+    line-height: 1.35;
+  }
+
+  .pub-journal {
+    font-size: 0.82rem;
+    color: var(--gold);
+    font-style: italic;
+    margin-bottom: 0.3rem;
+  }
+
+  .pub-doi {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+  }
+
+  .pub-type {
+    display: inline-block;
+    margin-top: 0.6rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    padding: 0.2rem 0.6rem;
+    border: 1px solid;
+  }
+
+  .pub-type.journal { color: var(--accent); border-color: rgba(79,163,224,0.3); }
+  .pub-type.conference { color: var(--gold); border-color: rgba(212,168,83,0.3); }
+
+  /* ── EDUCATION ── */
+  #education { background: var(--bg); }
+
+  .edu-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5px;
+    background: var(--border);
+    border: 1px solid var(--border);
+  }
+
+  .edu-card {
+    background: var(--surface);
+    padding: 2.5rem;
+    transition: background 0.25s;
+  }
+
+  .edu-card:hover { background: var(--surface2); }
+
+  .edu-degree {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.75rem;
+  }
+
+  .edu-field {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 0.4rem;
+    line-height: 1.3;
+  }
+
+  .edu-uni {
+    font-size: 0.88rem;
+    color: var(--gold);
+    font-style: italic;
+    margin-bottom: 0.3rem;
+  }
+
+  .edu-year {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-bottom: 0.8rem;
+  }
+
+  .edu-note {
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    line-height: 1.65;
+  }
+
+  /* ── CONTACT ── */
+  #contact {
+    background: var(--surface);
+    text-align: center;
+    padding: 8rem;
+  }
+
+  .contact-eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.35em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+  }
+
+  #contact h2 {
+    font-size: clamp(2.5rem, 5vw, 4rem);
+    margin-bottom: 1.5rem;
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .contact-sub {
+    font-size: 1rem;
+    color: var(--text-dim);
+    max-width: 500px;
+    margin: 0 auto 3rem;
+    font-style: italic;
+  }
+
+  .contact-links {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+    margin-bottom: 3rem;
+  }
+
+  .contact-link {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: color 0.2s;
+  }
+
+  .contact-link:hover { color: var(--accent); }
+
+  .contact-email-big {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    color: var(--gold);
+    font-style: italic;
+    margin-bottom: 2rem;
+    display: block;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    position: relative;
+    z-index: 1;
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+    padding: 2rem 8rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .footer-note {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+  }
+
+  /* ── SCROLL ANIMATIONS ── */
+  .reveal {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* staggered delays */
+  .reveal:nth-child(1) { transition-delay: 0s; }
+  .reveal:nth-child(2) { transition-delay: 0.08s; }
+  .reveal:nth-child(3) { transition-delay: 0.16s; }
+  .reveal:nth-child(4) { transition-delay: 0.24s; }
+  .reveal:nth-child(5) { transition-delay: 0.32s; }
+  .reveal:nth-child(6) { transition-delay: 0.40s; }
+
+  /* ── HERO ENTRANCE ── */
+  .hero-left > * {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: heroIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .hero-left > *:nth-child(1) { animation-delay: 0.3s; }
+  .hero-left > *:nth-child(2) { animation-delay: 0.45s; }
+  .hero-left > *:nth-child(3) { animation-delay: 0.55s; }
+  .hero-left > *:nth-child(4) { animation-delay: 0.65s; }
+  .hero-left > *:nth-child(5) { animation-delay: 0.75s; }
+
+  .hero-right {
+    opacity: 0;
+    animation: heroIn 1s cubic-bezier(0.16, 1, 0.3, 1) 0.6s forwards;
+  }
+
+  @keyframes heroIn {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 1100px) {
+    #hero { grid-template-columns: 1fr; padding: 6rem 4rem 4rem; }
+    .hero-right { padding-top: 0; }
+    section { padding: 5rem 4rem; }
+    nav { padding: 1.2rem 2.5rem; }
+    footer { padding: 2rem 4rem; }
+    .skills-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  @media (max-width: 700px) {
+    section { padding: 4rem 2rem; }
+    nav { padding: 1rem 1.5rem; }
+    .nav-links { gap: 1.5rem; }
+    footer { flex-direction: column; gap: 0.5rem; padding: 1.5rem 2rem; text-align: center; }
+    .skills-grid { grid-template-columns: 1fr; }
+    #contact { padding: 5rem 2rem; }
+  }
+
+  /* Glow pulse */
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(79, 163, 224, 0.2); }
+    50% { box-shadow: 0 0 30px 10px rgba(79, 163, 224, 0.1); }
+  }
+
+  .spec-card { animation: pulse 6s ease-in-out infinite; }
+
+  /* scan line */
+  @keyframes scanline {
+    0% { top: -10%; }
+    100% { top: 110%; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Animated Particle Canvas -->
+<canvas id="canvas-bg"></canvas>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">M. Jafari</div>
+  <ul class="nav-links">
+    <li><a href="#research">Research</a></li>
+    <li><a href="#experience">Experience</a></li>
+    <li><a href="#publications">Publications</a></li>
+    <li><a href="#education">Education</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-left">
+    <div class="hero-tag">Laser Physicist · PhD Applicant</div>
+    <h1>Mohammad<br><em>Jafari</em></h1>
+    <p class="hero-subtitle">Biophotonics · Brillouin Microscopy · Adaptive Optics</p>
+    <p class="hero-desc">
+      Visiting researcher at the University of Otago Biophotonics Lab, exploring
+      Stimulated Brillouin Scattering microscopy to probe the mechanical properties
+      of living cells. A decade of experience spanning laser spectroscopy,
+      adaptive optics, and numerical simulation.
+    </p>
+    <div class="hero-ctas">
+      <a href="#research" class="btn-primary">Explore Research</a>
+      <a href="#contact" class="btn-secondary">Get in Touch</a>
+    </div>
+  </div>
+  <div class="hero-right">
+    <div class="spec-card">
+      <div class="spec-card-title">// Current Position</div>
+      <div class="spec-row">
+        <span class="spec-label">Role</span>
+        <span class="spec-value"><strong>Visiting Researcher</strong></span>
+      </div>
+      <div class="spec-row">
+        <span class="spec-label">Lab</span>
+        <span class="spec-value">Biophotonics Lab, Univ. of Otago</span>
+      </div>
+      <div class="spec-row">
+        <span class="spec-label">Supervisor</span>
+        <span class="spec-value">Dr. Michael Taylor</span>
+      </div>
+      <div class="spec-row">
+        <span class="spec-label">Co-Supervisor</span>
+        <span class="spec-value">Dr. Harald Schwefel</span>
+      </div>
+      <div class="spec-row">
+        <span class="spec-label">Focus</span>
+        <span class="spec-value">SBS Microscopy · Cellular Biomechanics</span>
+      </div>
+      <div class="spec-row">
+        <span class="spec-label">Location</span>
+        <span class="spec-value">Dunedin, New Zealand</span>
+      </div>
+      <div class="spec-row">
+        <span class="spec-label">Status</span>
+        <span class="spec-value"><strong style="color:var(--accent)">Seeking PhD Position</strong></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- RESEARCH -->
+<section id="research">
+  <div class="section-header">
+    <span class="section-number">01</span>
+    <h2>Research Areas</h2>
+    <div class="section-line"></div>
+  </div>
+  <div class="research-grid">
+    <div class="research-card reveal">
+      <span class="research-icon">🔬</span>
+      <h3>Brillouin Microscopy & Cellular Biomechanics</h3>
+      <p>Developing SBS-based microscopy systems to non-invasively measure viscoelastic properties of biological cells. Building software lock-in amplifiers and PID temperature stabilization for precision experiments.</p>
+      <span class="tag">Active Research</span>
+    </div>
+    <div class="research-card reveal">
+      <span class="research-icon">⚡</span>
+      <h3>Laser Spectroscopy</h3>
+      <p>Deep expertise in Rb saturation and polarization spectroscopy, EIT, SERS, and ECDL construction at 633 & 780 nm. ECDL piezo calibration via Rb D2 saturation absorption at ~643 MHz/V.</p>
+      <span class="tag">10+ Years</span>
+    </div>
+    <div class="research-card reveal">
+      <span class="research-icon">🌀</span>
+      <h3>Adaptive Optics</h3>
+      <p>Orbital angular momentum (OAM) beams, fork diffraction gratings, and ATP platforms. Atmospheric laser propagation simulation with split-step algorithms and turbulence modeling.</p>
+      <span class="tag">Iranian Laser Center</span>
+    </div>
+    <div class="research-card reveal">
+      <span class="research-icon">🧮</span>
+      <h3>Numerical Simulation</h3>
+      <p>Multi-panel simulations of CW SBS in water, plasmon-enhanced BLS with gold nanoparticles, pump-probe modulation visualizers, and Laguerre-Gaussian beam turbulence effects.</p>
+      <span class="tag">MATLAB · Python</span>
+    </div>
+    <div class="research-card reveal">
+      <span class="research-icon">🤖</span>
+      <h3>AI in Photonics</h3>
+      <p>Exploring deep learning integration with spectroscopy and adaptive optics. Interests include ML-guided quantum memory simulation, MOT-ion trap optimization, and AI-powered data pipelines for optical experiments.</p>
+      <span class="tag">Emerging Focus</span>
+    </div>
+    <div class="research-card reveal">
+      <span class="research-icon">🔩</span>
+      <h3>Instrument Development</h3>
+      <p>Building Arduino PID controllers (HT10K heater, 90°C ±0.1°C), LabVIEW acquisition systems, and Python-based software lock-in amplifiers. Custom ECDL design and optical bench construction.</p>
+      <span class="tag">Hardware + Software</span>
+    </div>
+  </div>
+</section>
+
+<!-- EXPERIENCE -->
+<section id="experience">
+  <div class="section-header">
+    <span class="section-number">02</span>
+    <h2>Experience</h2>
+    <div class="section-line"></div>
+  </div>
+  <div class="timeline">
+    <div class="timeline-item reveal">
+      <div class="timeline-date">2025 — Present</div>
+      <div class="timeline-role">Visiting Researcher</div>
+      <div class="timeline-org">University of Otago Biophotonics Lab — Dunedin, New Zealand</div>
+      <div class="timeline-desc">
+        <ul>
+          <li>Developing SBS microscopy platform for cellular biomechanics under Dr. Michael Taylor</li>
+          <li>Software lock-in amplifier in Python/LabVIEW (~320 kHz modulation frequency)</li>
+          <li>Arduino PID temperature stabilization system targeting 90°C ±0.1°C</li>
+          <li>ECDL piezo frequency calibration via Rb saturation absorption spectroscopy</li>
+        </ul>
+      </div>
+    </div>
+    <div class="timeline-item reveal">
+      <div class="timeline-date">2015 — 2025</div>
+      <div class="timeline-role">Researcher & Developer</div>
+      <div class="timeline-org">Iranian Laser Center — Tehran, Iran</div>
+      <div class="timeline-desc">
+        <ul>
+          <li>Laser Spectroscopy Lab: Rb D2 hyperfine spectroscopy, EIT, SERS, polarization spectroscopy</li>
+          <li>Adaptive Optics Lab: OAM beams, fork gratings, ATP platform, FSM tracking systems</li>
+          <li>ECDL construction at 633 nm and 780 nm wavelengths</li>
+          <li>Atmospheric propagation simulation of Laguerre-Gaussian beams</li>
+          <li>Five conference papers at ICOP Iran (2015–2025)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SKILLS -->
+<section id="skills">
+  <div class="section-header">
+    <span class="section-number">03</span>
+    <h2>Technical Skills</h2>
+    <div class="section-line"></div>
+  </div>
+  <div class="skills-grid">
+    <div class="skill-group reveal">
+      <div class="skill-group-title">Software & Programming</div>
+      <div class="skill-item"><span class="skill-name">Python</span><div class="skill-bar"><div class="skill-fill" style="width:90%"></div></div></div>
+      <div class="skill-item"><span class="skill-name">MATLAB</span><div class="skill-bar"><div class="skill-fill" style="width:92%"></div></div></div>
+      <div class="skill-item"><span class="skill-name">LabVIEW</span><div class="skill-bar"><div class="skill-fill" style="width:82%"></div></div></div>
+      <div class="skill-item"><span class="skill-name">Arduino / C++</span><div class="skill-bar"><div class="skill-fill" style="width:75%"></div></div></div>
+      <div class="skill-item"><span class="skill-name">ZEMAX OpticStudio</span><div class="skill-bar"><div class="skill-fill" style="width:65%"></div></div></div>
+    </div>
+    <div class="skill-group reveal">
+      <div class="skill-group-title">Laser & Optics</div>
+      <div class="skill-item"><span class="skill-name">ECDL Design</span><div class="skill-bar"><div class="skill-fill" style="width:92%"></div></div></div>
+      <div class="skill-item"><span class="skill-name">Brillouin/Raman</span><div class="skill-bar"><div class="skill-fill" style="width:88%"></div></div></div>
+      <div class="skill-item"><span class="skill-name">Lock-in Amplifiers</span><div class="skill-bar"><div class="skill-fill" style="width:85%"></div></div></div>
+      <div class="skill-item"><span class="skill-name">Adaptive Optics</span><div class="skill-bar"><div class="skill-fill" style="width:85%"></div></div></div>
+      <div class="skill-item"><span class="skill-name">Nonlinear Optics</span><div class="skill-bar"><div class="skill-fill" style="width:80%"></div></div></div>
+    </div>
+    <div class="skill-group reveal">
+      <div class="skill-group-title">Tools & Design</div>
+      <div class="skill-item"><span class="skill-name">Origin Pro</span><div class="skill-bar"><div class="skill-fill" style="width:88%"></div></div></div>
+      <div class="skill-item"><span class="skill-name">SOLIDWORKS</span><div class="skill-bar"><div class="skill-fill" style="width:70%"></div></div></div>
+      <div class="skill-item"><span class="skill-name">Adobe Photoshop</span><div class="skill-bar"><div class="skill-fill" style="width:72%"></div></div></div>
+      <div class="skill-item"><span class="skill-name">PostgreSQL / Data Sci.</span><div class="skill-bar"><div class="skill-fill" style="width:55%"></div></div></div>
+      <div class="skill-item"><span class="skill-name">React / Web Dev</span><div class="skill-bar"><div class="skill-fill" style="width:62%"></div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- PUBLICATIONS -->
+<section id="publications">
+  <div class="section-header">
+    <span class="section-number">04</span>
+    <h2>Publications</h2>
+    <div class="section-line"></div>
+  </div>
+  <div class="pub-list">
+    <div class="pub-item reveal">
+      <div class="pub-year">2015</div>
+      <div class="pub-content">
+        <div class="pub-title">Thermo-optical characterization of CdZnS nanoparticle colloids</div>
+        <div class="pub-journal">Materials Science in Semiconductor Processing, Vol. 32</div>
+        <div class="pub-doi">DOI: 10.1016/j.mssp.2014.12.072</div>
+        <span class="pub-type journal">Journal Article</span>
+      </div>
+    </div>
+    <div class="pub-item reveal">
+      <div class="pub-year">2025</div>
+      <div class="pub-content">
+        <div class="pub-title">Turbulence effects on Laguerre-Gaussian beam propagation in atmospheric channels</div>
+        <div class="pub-journal">ICOP Iran — Conference Proceedings</div>
+        <span class="pub-type conference">Conference Paper</span>
+      </div>
+    </div>
+    <div class="pub-item reveal">
+      <div class="pub-year">2022</div>
+      <div class="pub-content">
+        <div class="pub-title">Polarization spectroscopy of Rb D2 hyperfine transitions</div>
+        <div class="pub-journal">ICOP Iran — Conference Proceedings</div>
+        <span class="pub-type conference">Conference Paper</span>
+      </div>
+    </div>
+    <div class="pub-item reveal">
+      <div class="pub-year">2020</div>
+      <div class="pub-content">
+        <div class="pub-title">Electromagnetically induced transparency in Rb D2 line</div>
+        <div class="pub-journal">ICOP Iran — Conference Proceedings</div>
+        <span class="pub-type conference">Conference Paper</span>
+      </div>
+    </div>
+    <div class="pub-item reveal">
+      <div class="pub-year">2020</div>
+      <div class="pub-content">
+        <div class="pub-title">Surface-enhanced Raman spectroscopy of blood serum</div>
+        <div class="pub-journal">ICOP Iran — Conference Proceedings</div>
+        <span class="pub-type conference">Conference Paper</span>
+      </div>
+    </div>
+    <div class="pub-item reveal">
+      <div class="pub-year">2015</div>
+      <div class="pub-content">
+        <div class="pub-title">Optical interferometry techniques for precision measurement</div>
+        <div class="pub-journal">ICOP Iran — Conference Proceedings</div>
+        <span class="pub-type conference">Conference Paper</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- EDUCATION -->
+<section id="education">
+  <div class="section-header">
+    <span class="section-number">05</span>
+    <h2>Education</h2>
+    <div class="section-line"></div>
+  </div>
+  <div class="edu-grid">
+    <div class="edu-card reveal">
+      <div class="edu-degree">M.Sc.</div>
+      <div class="edu-field">Laser Physics</div>
+      <div class="edu-uni">Shahid Beheshti University</div>
+      <div class="edu-year">Tehran, Iran</div>
+      <div class="edu-note">Graduated as top 1% distinguished student on full scholarship. Thesis focused on advanced laser spectroscopy and optical characterization.</div>
+    </div>
+    <div class="edu-card reveal">
+      <div class="edu-degree">B.Sc.</div>
+      <div class="edu-field">Solid State Physics</div>
+      <div class="edu-uni">University of Tabriz</div>
+      <div class="edu-year">Tabriz, Iran</div>
+      <div class="edu-note">Graduated as top 1% distinguished student on full scholarship. Foundation in condensed matter physics and materials science.</div>
+    </div>
+    <div class="edu-card reveal">
+      <div class="edu-degree">PhD</div>
+      <div class="edu-field">Laser Physics / Biophotonics</div>
+      <div class="edu-uni">Seeking Position</div>
+      <div class="edu-year">2025 — Present</div>
+      <div class="edu-note">Actively applying for PhD programs in laser physics, biophotonics, or quantum optics. Strong research background and publication record. IELTS 7.0.</div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact">
+  <div class="contact-eyebrow">// Contact</div>
+  <h2>Let's Build<br><em>Something Exceptional</em></h2>
+  <p class="contact-sub">Open to PhD positions, research collaborations, and discussions on laser physics, biophotonics, and quantum optics.</p>
+  <a class="contact-email-big" href="mailto:mohammadj131988@gmail.com">mohammadj131988@gmail.com</a>
+  <div class="contact-links">
+    <a class="contact-link" href="mailto:mohammadj131988@gmail.com">
+      <span>✉</span> Email
+    </a>
+    <a class="contact-link" href="tel:+989113332611">
+      <span>📞</span> (+98) 911-333-2611
+    </a>
+    <a class="contact-link" href="#">
+      <span>🔬</span> Otago Biophotonics Lab
+    </a>
+    <a class="contact-link" href="#">
+      <span>📍</span> Dunedin, New Zealand
+    </a>
+  </div>
+  <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+    <a href="mailto:mohammadj131988@gmail.com" class="btn-primary">Send Email</a>
+    <a href="#research" class="btn-secondary">View Research</a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-note">© 2025 Mohammad Jafari — Laser Physicist</div>
+  <div class="footer-note">University of Otago · Dunedin, New Zealand</div>
+  <div class="footer-note">Member: Optics & Photonics Society of Iran · Physical Society of Iran</div>
+</footer>
+
+<script>
+/* ── PARTICLE CANVAS ── */
+const canvas = document.getElementById('canvas-bg');
+const ctx = canvas.getContext('2d');
+let W, H, particles = [], lines = [];
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+class Particle {
+  constructor() { this.reset(); }
+  reset() {
+    this.x = Math.random() * W;
+    this.y = Math.random() * H;
+    this.vx = (Math.random() - 0.5) * 0.4;
+    this.vy = (Math.random() - 0.5) * 0.4;
+    this.r = Math.random() * 1.5 + 0.3;
+    this.alpha = Math.random() * 0.6 + 0.1;
+  }
+  update() {
+    this.x += this.vx;
+    this.y += this.vy;
+    if (this.x < 0 || this.x > W) this.vx *= -1;
+    if (this.y < 0 || this.y > H) this.vy *= -1;
+  }
+  draw() {
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(79,163,224,${this.alpha})`;
+    ctx.fill();
+  }
+}
+
+for (let i = 0; i < 90; i++) particles.push(new Particle());
+
+function animateCanvas() {
+  ctx.clearRect(0, 0, W, H);
+  particles.forEach(p => { p.update(); p.draw(); });
+  // Connect nearby particles
+  for (let i = 0; i < particles.length; i++) {
+    for (let j = i + 1; j < particles.length; j++) {
+      const dx = particles[i].x - particles[j].x;
+      const dy = particles[i].y - particles[j].y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 120) {
+        ctx.beginPath();
+        ctx.moveTo(particles[i].x, particles[i].y);
+        ctx.lineTo(particles[j].x, particles[j].y);
+        ctx.strokeStyle = `rgba(79,163,224,${0.12 * (1 - dist / 120)})`;
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+      }
+    }
+  }
+  requestAnimationFrame(animateCanvas);
+}
+animateCanvas();
+
+/* ── SCROLL REVEAL ── */
+const reveals = document.querySelectorAll('.reveal');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.12 });
+reveals.forEach(el => observer.observe(el));
+
+/* ── SKILL BAR ANIMATION ── */
+const skillObs = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.querySelectorAll('.skill-fill').forEach(bar => {
+        const target = bar.style.width;
+        bar.style.width = '0%';
+        setTimeout(() => { bar.style.width = target; }, 100);
+      });
+      skillObs.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.3 });
+document.querySelectorAll('.skill-group').forEach(g => skillObs.observe(g));
+
+/* ── SMOOTH NAV HIGHLIGHT ── */
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('.nav-links a');
+const navObs = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      const id = e.target.getAttribute('id');
+      navLinks.forEach(l => {
+        l.style.color = l.getAttribute('href') === `#${id}` ? 'var(--accent)' : '';
+      });
+    }
+  });
+}, { threshold: 0.4 });
+sections.forEach(s => navObs.observe(s));
+</script>
+</body>
+</html>

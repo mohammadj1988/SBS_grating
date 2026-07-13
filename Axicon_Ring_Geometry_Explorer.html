@@ -1,0 +1,118 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Axicon Ring Geometry Explorer</title>
+<style>
+body{font-family:Arial;margin:20px;background:#f5f5f5}
+.container{display:flex;gap:20px}
+.controls{width:320px;background:white;padding:15px;border-radius:10px}
+canvas{background:white;border:1px solid #aaa}
+label{display:block;margin-top:10px}
+.value{font-weight:bold}
+</style>
+</head>
+<body>
+<h2>Axicon / Ring / Objective Geometry Explorer</h2>
+<p>Move the sliders and see the difference between <b>axicon distance</b> and <b>ring radius on the objective</b>.</p>
+
+<div class="container">
+<div class="controls">
+<label>Axicon distance from observation plane (cm):
+<input id="dist" type="range" min="5" max="50" value="20" oninput="draw()">
+<span class="value" id="dval"></span>
+</label>
+
+<label>Cone half-angle (deg):
+<input id="cone" type="range" min="1" max="8" value="3" step="0.1" oninput="draw()">
+<span class="value" id="cval"></span>
+</label>
+
+<label>Ring radius on objective back aperture (mm):
+<input id="ring" type="range" min="0.5" max="4.5" value="2" step="0.1" oninput="draw()">
+<span class="value" id="rval"></span>
+</label>
+
+<label>Objective focal length (mm):
+<input id="focal" type="range" min="2" max="10" value="4" step="0.2" oninput="draw()">
+<span class="value" id="fval"></span>
+</label>
+
+<p id="theta"></p>
+<p><b>Key idea:</b><br>
+Changing <b>distance</b> changes the ring diameter at a plane.<br>
+Changing <b>ring radius on the objective</b> changes the beam angle inside the sample.</p>
+</div>
+
+<canvas id="cv" width="700" height="500"></canvas>
+</div>
+
+<script>
+function draw(){
+let dist=parseFloat(document.getElementById("dist").value);
+let cone=parseFloat(document.getElementById("cone").value)*Math.PI/180;
+let ring=parseFloat(document.getElementById("ring").value);
+let f=parseFloat(document.getElementById("focal").value);
+
+document.getElementById("dval").innerHTML=dist+" cm";
+document.getElementById("cval").innerHTML=(cone*180/Math.PI).toFixed(1)+"°";
+document.getElementById("rval").innerHTML=ring.toFixed(1)+" mm";
+document.getElementById("fval").innerHTML=f.toFixed(1)+" mm";
+
+let theta=Math.asin(Math.min(ring/f,0.999))*180/Math.PI;
+document.getElementById("theta").innerHTML="<b>Beam angle after objective ≈ "+theta.toFixed(1)+"°</b>";
+
+let c=document.getElementById("cv");
+let ctx=c.getContext("2d");
+ctx.clearRect(0,0,c.width,c.height);
+
+ctx.fillStyle="black";
+ctx.fillText("1) Axicon cone",20,20);
+
+let x0=120,y0=60;
+ctx.beginPath();
+ctx.moveTo(x0,y0);
+ctx.lineTo(x0-150*Math.tan(cone),300);
+ctx.moveTo(x0,y0);
+ctx.lineTo(x0+150*Math.tan(cone),300);
+ctx.stroke();
+
+let radius=dist*3*Math.tan(cone);
+ctx.beginPath();
+ctx.arc(120,370,Math.max(radius,2),0,2*Math.PI);
+ctx.strokeStyle="blue";
+ctx.stroke();
+
+ctx.fillStyle="blue";
+ctx.fillText("Ring at observation plane",20,470);
+
+ctx.strokeStyle="black";
+ctx.fillStyle="black";
+ctx.fillText("2) Objective back aperture",400,20);
+
+ctx.beginPath();
+ctx.arc(520,150,80,0,2*Math.PI);
+ctx.stroke();
+
+let rr=ring/4.5*80;
+ctx.beginPath();
+ctx.arc(520,150,rr,0,2*Math.PI);
+ctx.strokeStyle="red";
+ctx.stroke();
+
+ctx.strokeStyle="green";
+ctx.beginPath();
+ctx.moveTo(520,150);
+ctx.lineTo(520-120*Math.sin(theta*Math.PI/180),350);
+ctx.moveTo(520,150);
+ctx.lineTo(520+120*Math.sin(theta*Math.PI/180),350);
+ctx.stroke();
+
+ctx.fillStyle="green";
+ctx.fillText("Larger ring on aperture -> larger sample angle",330,390);
+}
+draw();
+</script>
+</body>
+</html>

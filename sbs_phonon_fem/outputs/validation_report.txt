@@ -1,0 +1,10 @@
+SBS phonon FDTD validation report
+========================================
+[PASS] Analytic cross-check (Study A longitudinal peak vs f_B)
+       numeric f_L = 1.3020 GHz vs analytic f_B = 1.3059 GHz (rel. error 0.3%, tolerance 15%; tolerance is loose because the sweep grid + finite forcing-spot bandwidth broaden the peak)
+[PASS] Zero-shear-modulus sanity check (water shear response negligible)
+       water (mu~0) shear peak = 3.397e-31 vs collagen_gel (mu=6.56e+05 Pa) shear peak = 2.911e-30; ratio = 0.117 (must be <= 0.2)
+[PASS] Absorbing-boundary sanity check (no reflection re-growth)
+       boundary-probe energy peak=1.187e-01; late-window max=2.368e-03 (rebound fraction 1.99%, tolerance 5%)
+========================================
+ALL CHECKS PASSED

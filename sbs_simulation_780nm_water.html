@@ -1,0 +1,404 @@
+
+<h2 class="sr-only">Interactive CW Stimulated Brillouin Scattering Simulation in Water at 780 nm</h2>
+<style>
+  :root {
+    --pump-color: #E85D24;
+    --probe-color: #2D7DD2;
+    --overlap-color: #8B4FBF;
+  }
+  .sim-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin: 0 0 1rem;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .param-title {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin: 0 0 2px;
+  }
+  .freq-badge {
+    background: var(--color-background-secondary);
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-md);
+    padding: 8px 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .freq-val {
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+  }
+  .freq-sub {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+  }
+  .metrics-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin: 0 0 1rem;
+  }
+  .metric-card {
+    background: var(--color-background-secondary);
+    border-radius: var(--border-radius-md);
+    padding: 10px 12px;
+  }
+  .metric-val {
+    font-size: 18px;
+    font-weight: 500;
+  }
+  .metric-lbl {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    margin-top: 2px;
+  }
+  .controls-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 24px;
+    margin: 0 0 1.25rem;
+  }
+  .ctrl-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .ctrl-label {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    min-width: 110px;
+    white-space: nowrap;
+  }
+  .ctrl-val {
+    font-size: 12px;
+    font-weight: 500;
+    min-width: 52px;
+    text-align: right;
+    color: var(--color-text-primary);
+  }
+  .beam-canvases {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin: 0 0 1.25rem;
+  }
+  .beam-panel {
+    background: var(--color-background-secondary);
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-md);
+    overflow: hidden;
+    position: relative;
+  }
+  .beam-panel-lbl {
+    position: absolute;
+    top: 6px; left: 8px;
+    font-size: 11px;
+    color: rgba(255,255,255,0.85);
+    font-weight: 500;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+    z-index: 2;
+    pointer-events: none;
+  }
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+  }
+  .chart-panel {
+    background: var(--color-background-secondary);
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-md);
+    padding: 10px;
+  }
+  .chart-title {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    margin: 0 0 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+</style>
+
+<div class="sim-header">
+  <div>
+    <div style="font-size:15px;font-weight:500;color:var(--color-text-primary);margin:0 0 2px">CW SBS in Water — 780 nm</div>
+    <div style="font-size:12px;color:var(--color-text-secondary)">n = 1.33 &nbsp;|&nbsp; v<sub>a</sub> = 1480 m/s &nbsp;|&nbsp; Gaussian beams</div>
+  </div>
+  <div class="freq-badge">
+    <span class="freq-sub">Brillouin shift</span>
+    <span class="freq-val" id="freq-display">5.07 GHz</span>
+    <span class="freq-sub">Δf<sub>B</sub> = 2nv<sub>a</sub>/λ</span>
+  </div>
+</div>
+
+<div class="metrics-row">
+  <div class="metric-card">
+    <div class="metric-val" id="m-overlap" style="color:#8B4FBF">—</div>
+    <div class="metric-lbl">Overlap efficiency η</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-val" id="m-gain">—</div>
+    <div class="metric-lbl">SBS gain G<sub>SBS</sub></div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-val" id="m-signal">—</div>
+    <div class="metric-lbl">Signal power P<sub>SBS</sub></div>
+  </div>
+</div>
+
+<div class="controls-grid">
+  <div class="ctrl-row">
+    <span class="ctrl-label" style="color:var(--pump-color)">Pump power (mW)</span>
+    <input type="range" min="1" max="500" value="100" step="1" id="sl-pump" style="flex:1">
+    <span class="ctrl-val" id="lbl-pump">100</span>
+  </div>
+  <div class="ctrl-row">
+    <span class="ctrl-label" style="color:var(--probe-color)">Probe power (mW)</span>
+    <input type="range" min="1" max="100" value="10" step="1" id="sl-probe" style="flex:1">
+    <span class="ctrl-val" id="lbl-probe">10</span>
+  </div>
+  <div class="ctrl-row">
+    <span class="ctrl-label">Beam waist w₀ (μm)</span>
+    <input type="range" min="5" max="100" value="20" step="1" id="sl-waist" style="flex:1">
+    <span class="ctrl-val" id="lbl-waist">20</span>
+  </div>
+  <div class="ctrl-row">
+    <span class="ctrl-label" style="color:var(--overlap-color)">Lateral offset (μm)</span>
+    <input type="range" min="0" max="100" value="0" step="1" id="sl-offset" style="flex:1">
+    <span class="ctrl-val" id="lbl-offset">0</span>
+  </div>
+  <div class="ctrl-row">
+    <span class="ctrl-label">Angular misalign (mrad)</span>
+    <input type="range" min="0" max="50" value="0" step="0.5" id="sl-angle" style="flex:1">
+    <span class="ctrl-val" id="lbl-angle">0.0</span>
+  </div>
+</div>
+
+<div class="beam-canvases">
+  <div class="beam-panel"><span class="beam-panel-lbl">Pump beam</span><canvas id="cv-pump" width="200" height="160"></canvas></div>
+  <div class="beam-panel"><span class="beam-panel-lbl">Probe beam</span><canvas id="cv-probe" width="200" height="160"></canvas></div>
+  <div class="beam-panel"><span class="beam-panel-lbl">Overlap (Pump × Probe)</span><canvas id="cv-overlap" width="200" height="160"></canvas></div>
+</div>
+
+<div class="charts-grid">
+  <div class="chart-panel">
+    <div class="chart-title">Signal vs offset</div>
+    <div style="position:relative;height:160px"><canvas id="ch-offset" role="img" aria-label="SBS signal power as function of lateral beam offset"></canvas></div>
+  </div>
+  <div class="chart-panel">
+    <div class="chart-title">Signal vs angle</div>
+    <div style="position:relative;height:160px"><canvas id="ch-angle" role="img" aria-label="SBS signal power as function of angular misalignment"></canvas></div>
+  </div>
+  <div class="chart-panel">
+    <div class="chart-title">Brillouin spectrum</div>
+    <div style="position:relative;height:160px"><canvas id="ch-spectrum" role="img" aria-label="Brillouin spectrum with peak near 5 GHz"></canvas></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const LAMBDA = 780e-9;
+const N = 1.33;
+const VA = 1480;
+const G0 = 1.5e-11;
+const INTERACTION_LENGTH = 0.5e-3;
+
+const freqB = 2 * N * VA / LAMBDA;
+document.getElementById('freq-display').textContent = (freqB / 1e9).toFixed(2) + ' GHz';
+
+function gaussian2D(x, y, cx, cy, wx, wy) {
+  return Math.exp(-2 * ((x - cx) ** 2 / wx ** 2 + (y - cy) ** 2 / wy ** 2));
+}
+
+function renderBeam(canvas, cx, cy, w0, color, scale) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const img = ctx.createImageData(W, H);
+  const d = img.data;
+  const range = 3.5 * scale;
+  for (let py = 0; py < H; py++) {
+    for (let px = 0; px < W; px++) {
+      const x = ((px / W) - 0.5) * 2 * range;
+      const y = ((py / H) - 0.5) * 2 * range;
+      const v = gaussian2D(x, y, cx, cy, 1, 1);
+      const i = (py * W + px) * 4;
+      d[i]   = color[0] * v | 0;
+      d[i+1] = color[1] * v | 0;
+      d[i+2] = color[2] * v | 0;
+      d[i+3] = Math.min(255, (30 + 225 * v) | 0);
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
+function renderOverlap(canvas, offset_norm, w0_px, scale) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const img = ctx.createImageData(W, H);
+  const d = img.data;
+  const range = 3.5 * scale;
+  for (let py = 0; py < H; py++) {
+    for (let px = 0; px < W; px++) {
+      const x = ((px / W) - 0.5) * 2 * range;
+      const y = ((py / H) - 0.5) * 2 * range;
+      const vp = gaussian2D(x, y, 0, 0, 1, 1);
+      const vq = gaussian2D(x, y, offset_norm, 0, 1, 1);
+      const v  = Math.sqrt(vp * vq);
+      const i = (py * W + px) * 4;
+      d[i]   = (220 * v) | 0;
+      d[i+1] = (80  * v) | 0;
+      d[i+2] = (220 * v) | 0;
+      d[i+3] = Math.min(255, (20 + 235 * v) | 0);
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
+function calcOverlapEfficiency(offset_um, w0_um) {
+  return Math.exp(-offset_um ** 2 / (2 * w0_um ** 2));
+}
+
+function calcAngleOverlap(angle_mrad, w0_um, lambda_um) {
+  const div_angle_rad = lambda_um * 1e-6 / (Math.PI * w0_um * 1e-6);
+  const theta_rad = angle_mrad * 1e-3;
+  return Math.exp(-(theta_rad ** 2) / (4 * div_angle_rad ** 2));
+}
+
+function calcSBSGain(pump_mW, w0_um) {
+  const P = pump_mW * 1e-3;
+  const A = Math.PI * (w0_um * 1e-6) ** 2 / 2;
+  const I = P / A;
+  return G0 * I * INTERACTION_LENGTH;
+}
+
+function calcSignal(pump_mW, probe_mW, w0_um, offset_um, angle_mrad) {
+  const eta_off = calcOverlapEfficiency(offset_um, w0_um);
+  const lambda_um = LAMBDA * 1e6;
+  const eta_ang = calcAngleOverlap(angle_mrad, w0_um, lambda_um);
+  const eta = eta_off * eta_ang;
+  const G = calcSBSGain(pump_mW, w0_um);
+  const Pp = probe_mW * 1e-3;
+  const P_sbs = Pp * (Math.exp(G * eta) - 1);
+  return { eta: eta * 100, G, P_sbs: P_sbs * 1e9 };
+}
+
+function formatSI(v, unit) {
+  if (v >= 1000) return (v / 1000).toFixed(2) + ' n' + unit;
+  if (v >= 1)    return v.toFixed(2) + ' p' + unit;
+  return (v * 1000).toFixed(2) + ' f' + unit;
+}
+
+const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+const chartColor = dark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)';
+const textColor  = dark ? '#9c9a92' : '#73726c';
+const gridColor  = dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+
+const baseOpts = (xlabel, ylabel) => ({
+  responsive: true,
+  maintainAspectRatio: false,
+  animation: { duration: 0 },
+  plugins: {
+    legend: { display: false },
+    tooltip: { enabled: false }
+  },
+  scales: {
+    x: { title: { display: true, text: xlabel, color: textColor, font: { size: 10 } }, ticks: { color: textColor, font: { size: 9 }, maxTicksLimit: 5 }, grid: { color: gridColor } },
+    y: { title: { display: true, text: ylabel, color: textColor, font: { size: 10 } }, ticks: { color: textColor, font: { size: 9 }, maxTicksLimit: 4 }, grid: { color: gridColor } }
+  }
+});
+
+const N_PTS = 60;
+
+const offsetX = Array.from({length: N_PTS}, (_,i) => parseFloat(((i / (N_PTS-1)) * 100).toFixed(1)));
+const angleX  = Array.from({length: N_PTS}, (_,i) => parseFloat(((i / (N_PTS-1)) * 50).toFixed(1)));
+const freqX   = Array.from({length: 200}, (_,i) => parseFloat(((freqB/1e9 - 1) + (i / 199) * 2).toFixed(3)));
+
+const chOffset = new Chart(document.getElementById('ch-offset'), {
+  type: 'line',
+  data: { labels: offsetX, datasets: [{ data: [], borderColor: '#8B4FBF', borderWidth: 1.5, pointRadius: 0, fill: { target: 'origin', above: 'rgba(139,79,191,0.12)' }, tension: 0.4 }] },
+  options: { ...baseOpts('Offset (μm)', 'Signal (nW)'), elements: { line: { borderCapStyle: 'round' } } }
+});
+
+const chAngle = new Chart(document.getElementById('ch-angle'), {
+  type: 'line',
+  data: { labels: angleX, datasets: [{ data: [], borderColor: '#2D7DD2', borderWidth: 1.5, pointRadius: 0, fill: { target: 'origin', above: 'rgba(45,125,210,0.12)' }, tension: 0.4 }] },
+  options: { ...baseOpts('Angle (mrad)', 'Signal (nW)') }
+});
+
+const chSpec = new Chart(document.getElementById('ch-spectrum'), {
+  type: 'line',
+  data: { labels: freqX, datasets: [{ data: [], borderColor: '#E85D24', borderWidth: 1.5, pointRadius: 0, fill: { target: 'origin', above: 'rgba(232,93,36,0.15)' }, tension: 0.4 }] },
+  options: { ...baseOpts('Frequency (GHz)', 'Intensity (a.u.)') }
+});
+
+function lorentzian(f, f0, gamma) {
+  return (gamma / 2) ** 2 / ((f - f0) ** 2 + (gamma / 2) ** 2);
+}
+
+function update() {
+  const pump  = +document.getElementById('sl-pump').value;
+  const probe = +document.getElementById('sl-probe').value;
+  const w0    = +document.getElementById('sl-waist').value;
+  const off   = +document.getElementById('sl-offset').value;
+  const ang   = +document.getElementById('sl-angle').value;
+
+  document.getElementById('lbl-pump').textContent  = pump;
+  document.getElementById('lbl-probe').textContent = probe;
+  document.getElementById('lbl-waist').textContent = w0;
+  document.getElementById('lbl-offset').textContent = off;
+  document.getElementById('lbl-angle').textContent  = ang.toFixed(1);
+
+  const { eta, G, P_sbs } = calcSignal(pump, probe, w0, off, ang);
+
+  document.getElementById('m-overlap').textContent = eta.toFixed(1) + '%';
+  document.getElementById('m-gain').textContent    = G.toExponential(2);
+  document.getElementById('m-signal').textContent  = P_sbs.toFixed(3) + ' nW';
+
+  const scale = w0 / 30;
+  const offset_norm = off / w0;
+  renderBeam(document.getElementById('cv-pump'),  0,          0, 1, [232, 93,  36], scale);
+  renderBeam(document.getElementById('cv-probe'), offset_norm, 0, 1, [45, 125, 210], scale);
+  renderOverlap(document.getElementById('cv-overlap'), offset_norm, w0, scale);
+
+  const offData  = offsetX.map(d => {
+    const r = calcSignal(pump, probe, w0, d, ang);
+    return +r.P_sbs.toFixed(4);
+  });
+  const angData  = angleX.map(a => {
+    const r = calcSignal(pump, probe, w0, off, a);
+    return +r.P_sbs.toFixed(4);
+  });
+
+  const gamma_GHz = 0.035;
+  const fB = freqB / 1e9;
+  const specData = freqX.map(f => {
+    const peak = lorentzian(f, fB, gamma_GHz);
+    const noise = 0.003 * Math.random();
+    return +(peak + noise).toFixed(4);
+  });
+
+  chOffset.data.datasets[0].data = offData;
+  chAngle.data.datasets[0].data  = angData;
+  chSpec.data.datasets[0].data   = specData;
+
+  chOffset.options.scales.y.title.text = 'Signal (nW)';
+  chAngle.options.scales.y.title.text  = 'Signal (nW)';
+
+  chOffset.update();
+  chAngle.update();
+  chSpec.update();
+}
+
+['sl-pump','sl-probe','sl-waist','sl-offset','sl-angle'].forEach(id => {
+  document.getElementById(id).addEventListener('input', update);
+});
+
+update();
+</script>
